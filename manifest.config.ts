@@ -7,4 +7,13 @@ export default defineManifest({
   action: {
     default_popup: "index.html",
   },
+  background: {
+    service_worker: "src/service_worker.ts",
+  },
+  content_scripts: [
+    {
+      js: ["src/content/main.ts"],
+      matches: ["https://*/*"],
+    },
+  ],
 });
