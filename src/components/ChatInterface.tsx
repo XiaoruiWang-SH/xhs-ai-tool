@@ -6,7 +6,12 @@ import {
   Message,
   MessageInput,
   TypingIndicator,
-} from "@chatscope/chat-ui-kit-react";
+} from '@chatscope/chat-ui-kit-react';
+import {
+  AIService,
+  buildChatMessages,
+  getAIConfig,
+} from '../services/openaiService.js';
 
 interface ChatMessage {
   id: string;
@@ -26,7 +31,9 @@ interface ChatInterfaceProps {
   collectedContent?: CollectedContent;
 }
 
-export const ChatInterface: React.FC<ChatInterfaceProps> = ({ collectedContent }) => {
+export const ChatInterface: React.FC<ChatInterfaceProps> = ({
+  collectedContent,
+}) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const messageIdCounter = useRef(0);
@@ -38,61 +45,79 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ collectedContent }
     '润色文本内容',
     '根据图片生成描述',
     '生成热门话题标题',
-    '重写内容让它更吸引人'
+    '重写内容让它更吸引人',
   ];
 
   const generateMessageId = () => {
     return `msg_${messageIdCounter.current++}_${Date.now()}`;
   };
 
-  const sendMessage = useCallback(async (text: string) => {
-    if (!text.trim()) return;
+  const sendMessage = useCallback(
+    async (text: string) => {
+      if (!text.trim()) return;
 
-    const userMessage: ChatMessage = {
-      id: generateMessageId(),
-      content: text,
-      sender: 'user',
-      timestamp: new Date(),
-    };
+      const userMessage: ChatMessage = {
+        id: generateMessageId(),
+        content: text,
+        sender: 'user',
+        timestamp: new Date(),
+      };
 
-    setMessages(prev => [...prev, userMessage]);
-    setIsTyping(true);
+      setMessages((prev) => [...prev, userMessage]);
+      setIsTyping(true);
 
-    try {
-      // 发送到background script处理
-      const response = await chrome.runtime.sendMessage({
-        action: 'chatWithAI',
-        data: {
+      try {
+        // 直接处理AI请求，不通过service worker
+        const config = await getAIConfig();
+        if (!config.apiKey) {
+          throw new Error('请先配置API密钥。点击设置按钮进行配置');
+        }
+
+        // 使用AI SDK (支持OpenAI和Claude)
+        const aiService = new AIService(config);
+        
+        if (!aiService.isConfigured()) {
+          throw new Error('AI服务配置失败，请检查API密钥');
+        }
+
+        // 构建聊天消息
+        const chatMessages = buildChatMessages({
           message: text,
           context: collectedContent,
-          conversationHistory: messages.slice(-5) // 只发送最近5条消息作为上下文
-        }
-      });
+          conversationHistory: messages.slice(-5).map(msg => ({
+            sender: msg.sender,
+            content: msg.content
+          }))
+        });
 
-      if (response.success) {
+        // 调用AI API
+        const aiResponse = await aiService.chatCompletion(chatMessages);
+
         const aiMessage: ChatMessage = {
           id: generateMessageId(),
-          content: response.data.reply,
+          content: aiResponse.content,
           sender: 'ai',
           timestamp: new Date(),
         };
-        setMessages(prev => [...prev, aiMessage]);
-      } else {
-        throw new Error(response.error || 'AI响应失败');
+        setMessages((prev) => [...prev, aiMessage]);
+
+      } catch (error) {
+        console.error('发送消息失败:', error);
+        const errorMessage: ChatMessage = {
+          id: generateMessageId(),
+          content: `抱歉，发生了错误: ${
+            error instanceof Error ? error.message : '未知错误'
+          }`,
+          sender: 'ai',
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, errorMessage]);
+      } finally {
+        setIsTyping(false);
       }
-    } catch (error) {
-      console.error('发送消息失败:', error);
-      const errorMessage: ChatMessage = {
-        id: generateMessageId(),
-        content: `抱歉，发生了错误: ${error instanceof Error ? error.message : '未知错误'}`,
-        sender: 'ai',
-        timestamp: new Date(),
-      };
-      setMessages(prev => [...prev, errorMessage]);
-    } finally {
-      setIsTyping(false);
-    }
-  }, [collectedContent, messages]);
+    },
+    [collectedContent, messages]
+  );
 
   const handlePresetClick = (prompt: string) => {
     sendMessage(prompt);
@@ -103,13 +128,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ collectedContent }
     if (messages.length === 0) {
       const welcomeMessage: ChatMessage = {
         id: generateMessageId(),
-        content: '👋 你好！我是你的AI助手。我可以帮你:\n\n• 根据图片和内容生成标题\n• 润色和优化文本\n• 创作吸引人的内容\n• 提供写作建议\n\n选择下方的预设功能或直接输入你的需求吧！',
+        content:
+          '👋 你好！我是你的AI助手。我可以帮你:\n\n• 根据图片和内容生成标题\n• 润色和优化文本\n• 创作吸引人的内容\n• 提供写作建议\n\n选择下方的预设功能或直接输入你的需求吧！',
         sender: 'ai',
         timestamp: new Date(),
       };
       setMessages([welcomeMessage]);
     }
-  }, []);
+  }, [messages.length]);
 
   return (
     <div className="h-full flex flex-col">
@@ -131,9 +157,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ collectedContent }
         <div className="p-2.5 bg-surface border-b border-gray-300 text-xs text-primary">
           <div>📊 已收集内容:</div>
           <div>
-            🖼️ 图片: {collectedContent.images.length}张 | 
-            📝 标题: {collectedContent.title ? '✓' : '✗'} | 
-            📄 内容: {collectedContent.content ? '✓' : '✗'}
+            🖼️ 图片: {collectedContent.images.length}张 | 📝 标题:{' '}
+            {collectedContent.title ? '✓' : '✗'} | 📄 内容:{' '}
+            {collectedContent.content ? '✓' : '✗'}
           </div>
         </div>
       )}
@@ -143,23 +169,21 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ collectedContent }
         <MainContainer>
           <ChatContainer>
             <MessageList>
-              {messages.map(msg => (
+              {messages.map((msg) => (
                 <Message
                   key={msg.id}
                   model={{
                     message: msg.content,
                     sender: msg.sender === 'user' ? 'You' : 'AI Assistant',
                     direction: msg.sender === 'user' ? 'outgoing' : 'incoming',
-                    position: 'single'
+                    position: 'single',
                   }}
                 />
               ))}
-              {isTyping && (
-                <TypingIndicator content="AI正在思考..." />
-              )}
+              {isTyping && <TypingIndicator content="AI正在思考..." />}
             </MessageList>
-            <MessageInput 
-              placeholder="输入消息或选择上方预设功能..." 
+            <MessageInput
+              placeholder="输入消息或选择上方预设功能..."
               onSend={sendMessage}
               attachButton={false}
               sendButton={true}
@@ -170,3 +194,4 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ collectedContent }
     </div>
   );
 };
+

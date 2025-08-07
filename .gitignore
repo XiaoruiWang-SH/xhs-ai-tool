@@ -14,6 +14,7 @@ dist-ssr
 release
 .claude
 materials
+.env
 
 
 # Editor directories and files

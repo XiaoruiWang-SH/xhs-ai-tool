@@ -10,8 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.58.0",
     "@chatscope/chat-ui-kit-react": "^2.1.1",
     "@tailwindcss/vite": "^4.1.11",
+    "openai": "^5.12.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "tailwindcss": "^4.1.11"
