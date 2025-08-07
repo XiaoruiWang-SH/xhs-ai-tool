@@ -77,9 +77,18 @@ chrome.runtime.onMessage.addListener(
         // sendResponse({ success: true, message: 'AI标签点击事件已记录' });
         return false;
 
+      case 'contentCollected':
+        console.log('收到内容收集:', message.data);
+        handleContentCollected(message.data, sendResponse);
+        return false;
+
       case 'sendToContent':
         // sendResponse({ success: true, message: 'sendToContent事件已记录' });
         handleSendToContent(message.data, sendResponse);
+        return true;
+
+      case 'applyContentToPage':
+        handleApplyContentToPage(message.data, sendResponse);
         return true;
 
       default:
@@ -213,6 +222,75 @@ async function handleAiTagClicked(
       });
   } catch (error) {
     console.error('处理AI标签点击失败:', error);
+    sendResponse({
+      success: false,
+      error: (error as Error).message,
+    });
+  }
+}
+
+// 处理内容收集事件
+async function handleContentCollected(
+  data: any,
+  sendResponse: (response: any) => void
+): Promise<void> {
+  try {
+    console.log('处理内容收集:', data);
+
+    // 转发消息给sidepanel
+    chrome.runtime
+      .sendMessage({
+        action: 'contentReceived',
+        data: data,
+      })
+      .then(() => {
+        sendResponse({ success: true, message: '内容收集事件已处理' });
+      })
+      .catch((error) => {
+        console.error('转发消息失败:', error);
+        sendResponse({ success: false, error: error.message });
+      });
+  } catch (error) {
+    console.error('处理内容收集失败:', error);
+    sendResponse({
+      success: false,
+      error: (error as Error).message,
+    });
+  }
+}
+
+// 处理应用内容到页面
+async function handleApplyContentToPage(
+  data: any,
+  sendResponse: (response: any) => void
+): Promise<void> {
+  try {
+    console.log('应用内容到页面:', data);
+
+    // 获取当前活动标签页
+    const [tab] = await chrome.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
+
+    if (!tab.id) {
+      sendResponse({ success: false, error: '无效的标签页ID' });
+      return;
+    }
+
+    // 发送消息到content script应用内容
+    const response = await chrome.tabs.sendMessage(tab.id, {
+      action: 'applyEditedContent',
+      data: data,
+    });
+
+    sendResponse({
+      success: true,
+      message: '内容已应用到页面',
+      response: response,
+    });
+  } catch (error) {
+    console.error('应用内容到页面失败:', error);
     sendResponse({
       success: false,
       error: (error as Error).message,
