@@ -1,33 +1,62 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { useState, useEffect } from 'react'
 import './App.css'
+
+interface AiTagClickData {
+  timestamp: string;
+  element: string;
+  url: string;
+}
 
 function App() {
   const [count, setCount] = useState(0)
+  const [messages, setMessages] = useState<AiTagClickData[]>([])
+
+  useEffect(() => {
+    // 监听来自background script的消息
+    const messageListener = (message: any, sender: any, sendResponse: any) => {
+      if (message.action === 'aiTagClicked') {
+        console.log('收到AI标签点击消息:', message.data);
+        setMessages(prev => [...prev, message.data]);
+        sendResponse({ success: true });
+      }
+    };
+
+    chrome.runtime.onMessage.addListener(messageListener);
+
+    return () => {
+      chrome.runtime.onMessage.removeListener(messageListener);
+    };
+  }, [])
 
   return (
     <>
       <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+        <h1>小红书AI工具助手</h1>
+        <div className="card">
+          <p>AI标签点击次数: {messages.length}</p>
+          <button onClick={() => setCount((count) => count + 1)}>
+            计数器: {count}
+          </button>
+        </div>
+        
+        <div className="messages-section">
+          <h2>AI标签点击记录</h2>
+          {messages.length === 0 ? (
+            <p>暂无点击记录</p>
+          ) : (
+            <div className="messages-list">
+              {messages.map((msg, index) => (
+                <div key={index} className="message-item">
+                  <p><strong>时间:</strong> {new Date(msg.timestamp).toLocaleString()}</p>
+                  <p><strong>元素:</strong> {msg.element}</p>
+                  <p><strong>页面:</strong> {msg.url}</p>
+                  <hr />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
     </>
   )
 }

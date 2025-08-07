@@ -71,6 +71,10 @@ chrome.runtime.onMessage.addListener(
         handleExecuteScript(message.data, sendResponse);
         return true;
 
+      case 'aiTagClicked':
+        handleAiTagClicked(message.data, sendResponse);
+        return true;
+
       default:
         console.log('未知消息类型:', message.action);
         sendResponse({ error: '未知消息类型' });
@@ -133,6 +137,33 @@ async function handleExecuteScript(
     });
   } catch (error) {
     console.error('执行脚本失败:', error);
+    sendResponse({
+      success: false,
+      error: (error as Error).message,
+    });
+  }
+}
+
+// 处理AI标签点击事件
+async function handleAiTagClicked(
+  data: any,
+  sendResponse: (response: any) => void
+): Promise<void> {
+  try {
+    console.log('AI标签被点击:', data);
+    
+    // 转发消息给sidepanel
+    chrome.runtime.sendMessage({
+      action: 'aiTagClicked',
+      data: data
+    }).then(() => {
+      sendResponse({ success: true, message: 'AI标签点击事件已处理' });
+    }).catch((error) => {
+      console.error('转发消息失败:', error);
+      sendResponse({ success: false, error: error.message });
+    });
+  } catch (error) {
+    console.error('处理AI标签点击失败:', error);
     sendResponse({
       success: false,
       error: (error as Error).message,
