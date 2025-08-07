@@ -61,8 +61,41 @@ class DOMWatcher {
   }
 }
 
+// 将图片转换为base64的辅助函数
+async function convertImageToBase64(imgElement: HTMLImageElement): Promise<string> {
+  return new Promise((resolve, reject) => {
+    try {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) {
+        reject(new Error('Canvas context not available'));
+        return;
+      }
+      
+      // 确保图片已加载
+      if (imgElement.complete) {
+        canvas.width = imgElement.naturalWidth || imgElement.width;
+        canvas.height = imgElement.naturalHeight || imgElement.height;
+        ctx.drawImage(imgElement, 0, 0);
+        resolve(canvas.toDataURL('image/jpeg', 0.8));
+      } else {
+        imgElement.onload = () => {
+          canvas.width = imgElement.naturalWidth || imgElement.width;
+          canvas.height = imgElement.naturalHeight || imgElement.height;
+          ctx.drawImage(imgElement, 0, 0);
+          resolve(canvas.toDataURL('image/jpeg', 0.8));
+        };
+        imgElement.onerror = () => reject(new Error('Image load failed'));
+      }
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
 // 收集页面内容的函数
-function collectPageContent() {
+async function collectPageContent() {
   const data = {
     images: [] as string[],
     title: '',
@@ -73,12 +106,35 @@ function collectPageContent() {
   const imgPreviewArea = document.querySelector('.img-preview-area');
   if (imgPreviewArea) {
     const imgElements = imgPreviewArea.querySelectorAll('img.preview');
+    
+    // 转换所有图片为base64
+    const imagePromises: Promise<string>[] = [];
     imgElements.forEach((img: Element) => {
       const imgElement = img as HTMLImageElement;
       if (imgElement.src) {
-        data.images.push(imgElement.src);
+        if (imgElement.src.startsWith('blob:')) {
+          // 对于blob URL，转换为base64
+          imagePromises.push(convertImageToBase64(imgElement));
+        } else {
+          // 对于普通URL，直接使用
+            //   imagePromises.push(Promise.resolve(imgElement.src));
+        }
       }
     });
+    
+    try {
+      const imageResults = await Promise.all(imagePromises);
+      data.images = imageResults;
+    } catch (error) {
+      console.error('转换图片失败:', error);
+      // 如果转换失败，回退到原始URL
+      imgElements.forEach((img: Element) => {
+        const imgElement = img as HTMLImageElement;
+        if (imgElement.src) {
+          data.images.push(imgElement.src);
+        }
+      });
+    }
   }
 
   // b: 收集 .plugin.title-container .d-text 的input值
@@ -169,26 +225,47 @@ domWatcher.watch('.title.setting', (element) => {
   const mydiv = document.createElement('span');
   mydiv.textContent = '【AI】';
   mydiv.style.color = 'red';
-  mydiv.addEventListener('click', () => {
-    // 收集页面内容
-    const collectedData = collectPageContent();
+  mydiv.addEventListener('click', async () => {
+    try {
+      // 显示加载提示
+      mydiv.textContent = '【收集中...】';
+      mydiv.style.color = 'orange';
+      
+      // 收集页面内容
+      const collectedData = await collectPageContent();
 
-    // 发送消息给sidepanel
-    chrome.runtime
-      .sendMessage({
+      // 发送消息给sidepanel
+      const response = await chrome.runtime.sendMessage({
         action: 'contentCollected',
         data: {
           timestamp: new Date().toISOString(),
           url: window.location.href,
           content: collectedData,
         },
-      })
-      .then((response) => {
-        console.log('内容收集完成:', response);
-      })
-      .catch((error) => {
-        console.error('发送消息失败:', error);
       });
+      
+      console.log('内容收集完成:', response);
+      
+      // 恢复按钮状态
+      mydiv.textContent = '【AI】';
+      mydiv.style.color = 'green';
+      
+      // 2秒后恢复原色
+      setTimeout(() => {
+        mydiv.style.color = 'red';
+      }, 2000);
+      
+    } catch (error) {
+      console.error('内容收集失败:', error);
+      mydiv.textContent = '【失败】';
+      mydiv.style.color = 'red';
+      
+      // 2秒后恢复
+      setTimeout(() => {
+        mydiv.textContent = '【AI】';
+        mydiv.style.color = 'red';
+      }, 2000);
+    }
   });
   element.appendChild(mydiv);
 
