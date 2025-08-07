@@ -73,21 +73,58 @@ domWatcher.watch('.title.setting', (element) => {
   mydiv.addEventListener('click', () => {
     alert('[AI]被点击了');
     // 发送消息给sidepanel
-    chrome.runtime.sendMessage({
-      action: 'aiTagClicked',
-      data: {
-        timestamp: new Date().toISOString(),
-        element: element.textContent,
-        url: window.location.href
-      }
-    }).then((response) => {
-      console.log('消息发送成功:', response);
-    }).catch((error) => {
-      console.error('发送消息失败:', error);
-    });
+    chrome.runtime
+      .sendMessage({
+        action: 'aiTagClicked',
+        data: {
+          timestamp: new Date().toISOString(),
+          element: element.textContent,
+          url: window.location.href,
+        },
+      })
+      .then((response) => {
+        console.log('消息发送成功:', response);
+      })
+      .catch((error) => {
+        console.error('发送消息失败:', error);
+      });
   });
   element.appendChild(mydiv);
 
   domWatcher.stop();
 });
 domWatcher.start();
+
+// 监听来自sidepanel的消息
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  if (message.action === 'messageFromSidepanel') {
+    console.log('Content script收到来自sidepanel的消息:', message.data);
+
+    // 在页面上显示消息
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #4CAF50;
+      color: white;
+      padding: 10px 15px;
+      border-radius: 5px;
+      z-index: 10000;
+      font-family: Arial, sans-serif;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    `;
+    notification.textContent = `来自侧边栏: ${message.data.message}`;
+    document.body.appendChild(notification);
+
+    // 3秒后移除通知
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.parentNode.removeChild(notification);
+      }
+    }, 3000);
+
+    sendResponse({ success: true, message: '消息已在页面显示' });
+    return true;
+  }
+});

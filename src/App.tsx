@@ -8,15 +8,31 @@ interface AiTagClickData {
 }
 
 function App() {
-  const [count, setCount] = useState(0)
   const [messages, setMessages] = useState<AiTagClickData[]>([])
+
+  // 发送消息到content script
+  const sendMessageToContent = async (messageText: string) => {
+    try {
+      const response = await chrome.runtime.sendMessage({
+        action: 'sendToContent',
+        data: {
+          type: 'fromSidepanel',
+          message: messageText,
+          timestamp: new Date().toISOString()
+        }
+      });
+      console.log('消息发送成功:', response);
+    } catch (error) {
+      console.error('发送消息失败:', error);
+    }
+  };
 
   useEffect(() => {
     // 监听来自background script的消息
     const messageListener = (message: any, sender: any, sendResponse: any) => {
-      if (message.action === 'aiTagClicked') {
+      if (message.action === 'sendToPanel') {
         console.log('收到AI标签点击消息:', message.data);
-        setMessages(prev => [...prev, message.data]);
+        setMessages((prev) => [...prev, message.data]);
         sendResponse({ success: true });
       }
     };
@@ -34,9 +50,14 @@ function App() {
         <h1>小红书AI工具助手</h1>
         <div className="card">
           <p>AI标签点击次数: {messages.length}</p>
-          <button onClick={() => setCount((count) => count + 1)}>
-            计数器: {count}
-          </button>
+          <div>
+            <button onClick={() => sendMessageToContent('Hello from Sidepanel!')}>
+              发送消息到Content
+            </button>
+            <button onClick={() => sendMessageToContent('这是来自侧边栏的消息')}>
+              发送中文消息
+            </button>
+          </div>
         </div>
         
         <div className="messages-section">

@@ -72,7 +72,14 @@ chrome.runtime.onMessage.addListener(
         return true;
 
       case 'aiTagClicked':
-        handleAiTagClicked(message.data, sendResponse);
+            console.log('AI标签被点击:', message.data);
+            handleAiTagClicked(message.data, sendResponse);
+        // sendResponse({ success: true, message: 'AI标签点击事件已记录' });
+        return false;
+
+      case 'sendToContent':
+        // sendResponse({ success: true, message: 'sendToContent事件已记录' });
+        handleSendToContent(message.data, sendResponse);
         return true;
 
       default:
@@ -144,6 +151,45 @@ async function handleExecuteScript(
   }
 }
 
+// 处理发送消息到content script
+async function handleSendToContent(
+  data: any,
+  sendResponse: (response: any) => void
+): Promise<void> {
+  try {
+    console.log('转发消息到content script:', data);
+
+    // 获取当前活动标签页
+    const [tab] = await chrome.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
+
+    if (!tab.id) {
+      sendResponse({ success: false, error: '无效的标签页ID' });
+      return;
+    }
+
+    // 发送消息到content script
+    const response = await chrome.tabs.sendMessage(tab.id, {
+      action: 'messageFromSidepanel',
+      data: data,
+    });
+
+    sendResponse({
+      success: true,
+      message: '消息已发送到content script',
+      response: response,
+    });
+  } catch (error) {
+    console.error('发送消息到content script失败:', error);
+    sendResponse({
+      success: false,
+      error: (error as Error).message,
+    });
+  }
+}
+
 // 处理AI标签点击事件
 async function handleAiTagClicked(
   data: any,
@@ -151,17 +197,20 @@ async function handleAiTagClicked(
 ): Promise<void> {
   try {
     console.log('AI标签被点击:', data);
-    
+
     // 转发消息给sidepanel
-    chrome.runtime.sendMessage({
-      action: 'aiTagClicked',
-      data: data
-    }).then(() => {
-      sendResponse({ success: true, message: 'AI标签点击事件已处理' });
-    }).catch((error) => {
-      console.error('转发消息失败:', error);
-      sendResponse({ success: false, error: error.message });
-    });
+    chrome.runtime
+      .sendMessage({
+        action: 'sendToPanel',
+        data: data,
+      })
+      .then(() => {
+        sendResponse({ success: true, message: 'AI标签点击事件已处理' });
+      })
+      .catch((error) => {
+        console.error('转发消息失败:', error);
+        sendResponse({ success: false, error: error.message });
+      });
   } catch (error) {
     console.error('处理AI标签点击失败:', error);
     sendResponse({
