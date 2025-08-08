@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
-import { ChatInterface } from './components/ChatInterface2'
-import { SettingsPanel } from './components/SettingsPanel'
+import { useState, useEffect } from 'react';
+import { ChatInterface } from './components/ChatInterface';
+import { SettingsPanel } from './components/SettingsPanel';
 
 interface AiTagClickData {
   timestamp: string;
@@ -21,13 +21,15 @@ interface ContentData {
 }
 
 function App() {
-  const [messages, setMessages] = useState<AiTagClickData[]>([])
-  const [collectedContent, setCollectedContent] = useState<ContentData | null>(null)
-  const [editedTitle, setEditedTitle] = useState('')
-  const [editedContent, setEditedContent] = useState('')
-  const [isEditing, setIsEditing] = useState(false)
-  const [activeTab, setActiveTab] = useState<'content' | 'chat'>('content')
-  const [showSettings, setShowSettings] = useState(false)
+  const [messages, setMessages] = useState<AiTagClickData[]>([]);
+  const [collectedContent, setCollectedContent] = useState<ContentData | null>(
+    null
+  );
+  const [editedTitle, setEditedTitle] = useState('');
+  const [editedContent, setEditedContent] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabType>('ai');
+  const [showSettings, setShowSettings] = useState(false);
 
   // 发送消息到content script
   const sendMessageToContent = async (messageText: string) => {
@@ -37,8 +39,8 @@ function App() {
         data: {
           type: 'fromSidepanel',
           message: messageText,
-          timestamp: new Date().toISOString()
-        }
+          timestamp: new Date().toISOString(),
+        },
       });
       console.log('消息发送成功:', response);
     } catch (error) {
@@ -56,10 +58,10 @@ function App() {
         data: {
           title: editedTitle,
           content: editedContent,
-          images: collectedContent.content.images
-        }
+          images: collectedContent.content.images,
+        },
       });
-      
+
       if (response.success) {
         alert('内容已成功应用到页面!');
         setIsEditing(false);
@@ -102,7 +104,61 @@ function App() {
     return () => {
       chrome.runtime.onMessage.removeListener(messageListener);
     };
-  }, [])
+  }, []);
+
+  type TabType = 'ai' | 'setting';
+  interface Tab {
+    type: TabType;
+    label: string;
+  }
+  const tabs: Tab[] = [
+    { type: 'ai', label: ' 💬 AI助手 ' },
+    { type: 'setting', label: ' ⚙️ 设置 ' },
+  ];
+  const Switcher = ({
+    tabs,
+    cb,
+  }: {
+    tabs: Tab[];
+    cb: (tabIndex: Tab) => void;
+  }) => {
+    return (
+      <div className="flex items-baseline p-2.5 gap-2.5">
+        {tabs.map((tab, index) => (
+          <button
+            key={index}
+            onClick={() => cb(tab)}
+            className={`${
+              activeTab === tab.type ? 'text-primary border-b-2' : 'text-secondary'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+    );
+  };
+
+  return (
+    <div>
+      <div className="border-b-[0.5px] border-secondary">
+        <Switcher
+          tabs={tabs}
+          cb={(tab) => {
+            console.log(`切换到标签: ${tab}`);
+            setActiveTab(tab.type);
+          }}
+        />
+      </div>
+      <div>
+        {activeTab === 'ai' ? (
+          <ChatInterface collectedContent={collectedContent?.content} />
+        ) : (
+          <SettingsPanel onClose={() => setShowSettings(false)} />
+        )}
+      </div>
+    </div>
+  );
 
   return (
     <>
@@ -305,4 +361,4 @@ function App() {
   );
 }
 
-export default App
+export default App;
