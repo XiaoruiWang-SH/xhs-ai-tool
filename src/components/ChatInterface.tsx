@@ -1,9 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
-import {
-  AIService,
-  buildChatMessages,
-  getAIConfig,
-} from '../services/openaiService.js';
+import React, { useState } from 'react';
 
 interface ChatMessage {
   id: string;
@@ -23,9 +18,7 @@ interface ChatInterfaceProps {
   collectedContent?: CollectedContent;
 }
 
-export const ChatInterface: React.FC<ChatInterfaceProps> = ({
-  collectedContent,
-}) => {
+export const ChatInterface: React.FC<ChatInterfaceProps> = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: '01',
@@ -42,8 +35,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       type: 'text',
     },
   ]);
-  const [isTyping, setIsTyping] = useState(false);
-  const messageIdCounter = useRef(0);
 
   const MessageList = ({ messages }: { messages: ChatMessage[] }) => {
     const Message = ({ model }: { model: ChatMessage }) => {
