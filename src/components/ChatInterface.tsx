@@ -478,12 +478,23 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
       const response = await aiService.chatCompletion(chatMessages);
       
-      // Try to parse response as JSON first
+      // Parse response as JSON (should always be JSON now)
       let aiMessage: ChatMessage;
       try {
-        const parsedResponse = JSON.parse(response.content);
+        // Clean the response content in case it has markdown code blocks or extra text
+        let cleanedContent = response.content.trim();
+        
+        // Remove markdown code blocks if present
+        if (cleanedContent.startsWith('```json')) {
+          cleanedContent = cleanedContent.replace(/^```json\s*/, '').replace(/```\s*$/, '');
+        } else if (cleanedContent.startsWith('```')) {
+          cleanedContent = cleanedContent.replace(/^```\s*/, '').replace(/```\s*$/, '');
+        }
+        
+        const parsedResponse = JSON.parse(cleanedContent);
+        
         if (parsedResponse.title && parsedResponse.content) {
-          // It's a generated content response
+          // Generated content response with structured data
           aiMessage = {
             id: `ai-${Date.now()}`,
             type: 'ai',
@@ -498,15 +509,18 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             }
           };
         } else {
-          throw new Error('Invalid JSON format');
+          throw new Error('Invalid JSON structure: missing title or content');
         }
-      } catch {
-        // It's a regular text response
+      } catch (parseError) {
+        console.error('Failed to parse AI response as JSON:', parseError);
+        console.log('Original response:', response.content);
+        
+        // Fallback: treat as text response and show error
         aiMessage = {
           id: `ai-${Date.now()}`,
           type: 'ai',
           sender: 'ai',
-          content: response.content,
+          content: `AI返回格式错误，原始回复：\n${response.content}`,
           timestamp: new Date(),
           showApplyButton: false,
           isApplying: false,
