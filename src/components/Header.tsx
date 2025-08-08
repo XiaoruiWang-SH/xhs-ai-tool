@@ -36,7 +36,7 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <div className="flex items-center justify-between p-3 bg-white border-b border-chrome-border">
+    <div className="flex items-center justify-between p-3 bg-white border-b-chrome-border">
       <div className="flex items-center gap-2">
         <div className="text-xhs-red text-lg">🔴</div>
         <h1 className="text-title text-neutral-900 m-0">小红书 AI</h1>
@@ -50,7 +50,7 @@ export const Header: React.FC<HeaderProps> = ({
       {onSettingsClick && (
         <button
           onClick={onSettingsClick}
-          className="bg-transparent border border-neutral-300 rounded-full w-7 h-7 cursor-pointer flex items-center justify-center hover:bg-neutral-50 transition-colors"
+          className="bg-transparent border-neutral-300 rounded-full w-7 h-7 cursor-pointer flex items-center justify-center hover:bg-neutral-50 transition-colors"
           title="Settings"
           aria-label="Open settings"
         >

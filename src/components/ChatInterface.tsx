@@ -38,32 +38,7 @@ const ApplyButton: React.FC<{
     <button
       onClick={onClick}
       disabled={isLoading}
-      className={`apply-button ${isLoading ? 'loading' : ''} ${className}`}
-      style={{
-        backgroundColor: 'var(--xhs-red)',
-        color: 'white',
-        padding: '8px 16px',
-        borderRadius: '6px',
-        fontSize: '12px',
-        fontWeight: '500',
-        border: 'none',
-        cursor: isLoading ? 'not-allowed' : 'pointer',
-        opacity: isLoading ? 0.7 : 1,
-        transition: 'all 0.2s ease',
-        transform: 'translateY(0px)',
-      }}
-      onMouseEnter={(e) => {
-        if (!isLoading) {
-          e.currentTarget.style.backgroundColor = 'var(--xhs-red-hover)';
-          e.currentTarget.style.transform = 'translateY(-1px)';
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (!isLoading) {
-          e.currentTarget.style.backgroundColor = 'var(--xhs-red)';
-          e.currentTarget.style.transform = 'translateY(0px)';
-        }
-      }}
+      className={`bg-xhs-red hover:bg-xhs-red-hover text-white px-4 py-2 rounded-md text-caption font-medium border-0 disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200 hover:transform hover:-translate-y-0.5 ${className}`}
     >
       {isLoading ? '应用中...' : '📋 Apply to Page'}
     </button>
@@ -87,14 +62,7 @@ const CollectedContentMessage: React.FC<{
 
   return (
     <div className="mb-4 max-w-full">
-      <div
-        className="rounded-lg p-4 border"
-        style={{
-          backgroundColor: 'var(--xhs-red-light)',
-          borderColor: 'var(--chrome-border)',
-          boxShadow: 'var(--shadow-sm)',
-        }}
-      >
+      <div className="rounded-lg p-4 border bg-xhs-red-light border-chrome-border shadow-sm">
         {/* Header */}
         <div className="flex items-center gap-2 mb-3">
           <span className="text-sm">🤖</span>
@@ -107,12 +75,12 @@ const CollectedContentMessage: React.FC<{
         </div>
 
         {/* Content Card */}
-        <div className="bg-white rounded border border-neutral-300 p-3">
+        <div className="bg-white rounded border-neutral-300 p-3">
           {/* Images section */}
           {collectedData.images && collectedData.images.length > 0 && (
             <div className="mb-3">
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-body">📸</span>
+                <span className="text-sm">📸</span>
                 <span className="text-caption text-neutral-700">
                   Images ({collectedData.images.length})
                 </span>
@@ -123,7 +91,7 @@ const CollectedContentMessage: React.FC<{
                     key={index}
                     src={img}
                     alt={`Collected image ${index + 1}`}
-                    className="w-full h-16 object-cover rounded border border-neutral-300"
+                    className="w-full h-16 object-cover rounded border-neutral-300"
                   />
                 ))}
               </div>
@@ -134,10 +102,10 @@ const CollectedContentMessage: React.FC<{
           {collectedData.title && (
             <div className="mb-3">
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-body">📝</span>
+                <span className="text-sm">📝</span>
                 <span className="text-caption text-neutral-700">Title:</span>
               </div>
-              <p className="text-body text-neutral-900 ml-6">
+              <p className="text-sm text-neutral-900 ml-6">
                 {collectedData.title}
               </p>
             </div>
@@ -147,10 +115,10 @@ const CollectedContentMessage: React.FC<{
           {collectedData.content && (
             <div className="mb-3">
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-body">📄</span>
+                <span className="text-sm">📄</span>
                 <span className="text-caption text-neutral-700">Content:</span>
               </div>
-              <p className="text-body text-neutral-900 ml-6 line-clamp-3">
+              <p className="text-sm text-neutral-900 ml-6 line-clamp-3">
                 {collectedData.content.substring(0, 150)}
                 {collectedData.content.length > 150 ? '...' : ''}
               </p>
@@ -161,14 +129,14 @@ const CollectedContentMessage: React.FC<{
           <div className="flex gap-2 mt-3">
             <button
               onClick={handleGenerateIdeas}
-              className="flex items-center gap-1 px-3 py-1.5 text-caption text-xhs-red border border-xhs-red rounded hover:bg-xhs-red-light transition-colors"
+              className="flex items-center gap-1 px-3 py-1.5 text-caption text-xhs-red border-xhs-red rounded hover:bg-xhs-red-light transition-colors"
             >
               <span>✨</span>
               <span>Generate Ideas</span>
             </button>
             <button
               onClick={handleViewFullContent}
-              className="flex items-center gap-1 px-3 py-1.5 text-caption text-neutral-700 border border-neutral-300 rounded hover:bg-neutral-50 transition-colors"
+              className="flex items-center gap-1 px-3 py-1.5 text-caption text-neutral-700 border-neutral-300 rounded hover:bg-neutral-50 transition-colors"
             >
               <span>📋</span>
               <span>View Full Content</span>
@@ -220,14 +188,13 @@ const MessageBubble: React.FC<{
 
         {/* Message bubble */}
         <div
-          className={`rounded-lg p-3 ${
+          className={`rounded-lg p-3 shadow-sm ${
             isUser
               ? 'bg-blue-500 text-white'
-              : 'bg-white border border-neutral-300'
+              : 'bg-white border-neutral-300'
           }`}
-          style={{ boxShadow: 'var(--shadow-sm)' }}
         >
-          <div className="text-black whitespace-pre-wrap break-words">
+          <div className="text-sm whitespace-pre-wrap break-words">
             {message.content}
           </div>
 
@@ -281,7 +248,7 @@ const ChatInput: React.FC<{
   };
 
   return (
-    <div className="border-t border-chrome-border bg-white p-4">
+    <div className="border-t-chrome-border bg-white p-4">
       <div className="flex items-end gap-3">
         {/* Attachment button */}
         <button
@@ -301,7 +268,7 @@ const ChatInput: React.FC<{
             placeholder="Type your message..."
             disabled={disabled}
             rows={1}
-            className="w-full text-black border border-neutral-300 rounded-lg px-3 py-2 resize-none focus:border-xhs-red focus:outline-none disabled:bg-neutral-50 disabled:text-neutral-400"
+            className="w-full text-sm border-neutral-300 rounded-lg px-3 py-2 resize-none focus:border-xhs-red focus:outline-none disabled:bg-neutral-50 disabled:text-neutral-400"
             style={{ minHeight: '36px', maxHeight: '120px' }}
           />
         </div>
@@ -463,7 +430,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             <h3 className="text-title text-neutral-900 mb-2">
               Welcome to Xiaohongshu AI
             </h3>
-            <p className="text-body text-neutral-700 mb-4">
+            <p className="text-sm text-neutral-700 mb-4">
               I'm here to help create engaging content for your posts.
             </p>
             <p className="text-caption text-neutral-500">
@@ -508,12 +475,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 </span>
               </div>
               <div
-                className="bg-white border border-neutral-300 rounded-lg p-3"
-                style={{ boxShadow: 'var(--shadow-sm)' }}
+                className="bg-white border-neutral-300 rounded-lg p-3 shadow-sm"
               >
                 <div className="flex items-center gap-2">
                   <div className="animate-pulse">💭</div>
-                  <span className="text-body text-neutral-500">
+                  <span className="text-sm text-neutral-500">
                     AI is thinking...
                   </span>
                 </div>

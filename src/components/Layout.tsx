@@ -43,21 +43,21 @@ export const Layout: React.FC<LayoutProps> = ({
       />
       
       {/* Tab Navigation */}
-      <div className="flex border-b border-chrome-border bg-white">
+      <div className="flex border-b-chrome-border bg-white">
         {tabs.map((tab) => (
           <button
             key={tab.type}
             onClick={() => handleTabChange(tab.type)}
             className={`flex-1 py-3 px-4 text-center border-b-2 transition-colors ${
               activeTab === tab.type
-                ? 'text-xhs-red border-xhs-red font-semibold'
-                : 'text-neutral-500 border-transparent hover:text-neutral-700 hover:bg-neutral-50'
+                ? 'text-xhs-red border-b-xhs-red font-semibold'
+                : 'text-neutral-500 border-b-transparent hover:text-neutral-700 hover:bg-neutral-50'
             }`}
             aria-pressed={activeTab === tab.type}
           >
             <span className="inline-flex items-center gap-2">
               <span className="text-sm">{tab.icon}</span>
-              <span className="text-body">{tab.label}</span>
+              <span className="text-sm">{tab.label}</span>
             </span>
           </button>
         ))}
