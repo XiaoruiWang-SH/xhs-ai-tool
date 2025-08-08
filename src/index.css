@@ -183,4 +183,29 @@
   .hover\:bg-neutral-50:hover {
     background-color: var(--neutral-50);
   }
+
+  /* Additional utility classes for ChatInterface */
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .hover\:bg-xhs-red-hover:hover {
+    background-color: var(--xhs-red-hover);
+  }
+
+  .focus\:border-xhs-red:focus {
+    border-color: var(--xhs-red);
+  }
+
+  .animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
 }
