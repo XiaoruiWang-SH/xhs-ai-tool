@@ -1,16 +1,20 @@
 import OpenAI from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
+import {
+  type CollectedContent,
+} from '../components/ChatInterface';
+
+// API message format for OpenAI/Claude
+export interface APIMessage {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+}
 
 export interface AIConfig {
   provider: string;
   apiKey: string;
   model: string;
   baseUrl?: string;
-}
-
-export interface ChatMessage {
-  role: 'system' | 'user' | 'assistant';
-  content: string;
 }
 
 export interface AIResponse {
@@ -53,7 +57,7 @@ export class AIService {
     }
   }
 
-  public async chatCompletion(messages: ChatMessage[]): Promise<AIResponse> {
+  public async chatCompletion(messages: APIMessage[]): Promise<AIResponse> {
     if (this.config.provider === 'claude') {
       return this.claudeChatCompletion(messages);
     } else {
@@ -62,7 +66,7 @@ export class AIService {
   }
 
   private async claudeChatCompletion(
-    messages: ChatMessage[]
+    messages: APIMessage[]
   ): Promise<AIResponse> {
     if (!this.anthropic) {
       throw new Error(
@@ -116,7 +120,7 @@ export class AIService {
   }
 
   private async openaiChatCompletion(
-    messages: ChatMessage[]
+    messages: APIMessage[]
   ): Promise<AIResponse> {
     if (!this.openai) {
       throw new Error(
@@ -127,7 +131,7 @@ export class AIService {
     try {
       const response = await this.openai.chat.completions.create({
         model: this.config.model || 'gpt-3.5-turbo',
-        messages: messages,
+        messages: messages as OpenAI.Chat.Completions.ChatCompletionMessageParam[],
         max_tokens: 1000,
         temperature: 0.7,
       });
@@ -193,17 +197,13 @@ export class AIService {
 // 构建聊天消息的辅助函数
 export function buildChatMessages(data: {
   message: string;
-  context?: {
-    images?: string[];
-    title?: string;
-    content?: string;
-  };
   conversationHistory?: Array<{
     sender: 'user' | 'ai';
     content: string;
   }>;
-}): ChatMessage[] {
-  const messages: ChatMessage[] = [];
+  context?: CollectedContent;
+}): APIMessage[] {
+  const messages: APIMessage[] = [];
 
   // 系统提示词
   let systemPrompt = `你是一个专业的小红书内容创作助手。你的任务是帮助用户创作吸引人的标题和内容。
@@ -216,7 +216,7 @@ export function buildChatMessages(data: {
 
 请用友好、专业的语气回复，提供实用的建议。`;
 
-  // 如果有收集的内容，添加到系统提示中
+  // 添加收集到的内容到系统提示中
   if (data.context) {
     systemPrompt += `\n\n当前页面收集到的内容:\n`;
     if (data.context.images && data.context.images.length > 0) {

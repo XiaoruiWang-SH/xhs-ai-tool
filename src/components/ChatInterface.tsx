@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { AIService, buildChatMessages, getAIConfig } from '../services/AIService';
 
 // Message Types according to design spec
 export type MessageType = 'user' | 'ai' | 'system' | 'collected';
@@ -11,6 +12,10 @@ export interface ChatMessage {
   timestamp: Date;
   showApplyButton?: boolean;
   isApplying?: boolean;
+  // For collected content type
+  collectedData?: CollectedContent;
+  // For AI generated content
+  generatedData?: AiGeneratedContent;
 }
 
 export interface CollectedContent {
@@ -19,9 +24,9 @@ export interface CollectedContent {
   content: string;
 }
 
-interface CollectedContentMessage extends Omit<ChatMessage, 'content'> {
-  type: 'collected';
-  collectedData: CollectedContent;
+export interface AiGeneratedContent {
+  title: string;
+  content: string;
 }
 
 interface ChatInterfaceProps {
@@ -49,15 +54,60 @@ const ApplyButton: React.FC<{
 const CollectedContentMessage: React.FC<{
   collectedData: CollectedContent;
   timestamp: Date;
-}> = ({ collectedData, timestamp }) => {
-  const handleGenerateIdeas = () => {
-    console.log('Generate ideas clicked');
-    // TODO: Implement generate ideas functionality
-  };
+  onCommandClick?: (command: string) => void;
+}> = ({ collectedData, timestamp, onCommandClick }) => {
+  // Common commands for Xiaohongshu content creation
+  const commonCommands = [
+    {
+      id: 'optimize-notes',
+      icon: '🔥',
+      label: '优化笔记',
+      command:
+        '请基于当前的标题和内容进行全面的优化，包括优化标题让它更吸引人、丰富内容细节、添加合适的表情符号和话题标签，让整篇笔记更符合小红书的风格和传播效果',
+      color: 'text-xhs-red border-xhs-red hover:bg-xhs-red-light',
+    },
+    {
+      id: 'enhance-content',
+      icon: '📝',
+      label: '丰富内容',
+      command:
+        '请帮我丰富这个内容，增加更多细节描述、使用心得和实用建议，让内容更有价值',
+      color: 'text-green-600 border-green-600 hover:bg-green-50',
+    },
+    {
+      id: 'improve-title',
+      icon: '✨',
+      label: '优化标题',
+      command:
+        '请帮我优化这个标题，让它更吸引人、更有点击欲望，符合小红书的风格',
+      color: 'text-purple-600 border-purple-600 hover:bg-purple-50',
+    },
+    {
+      id: 'add-hashtags',
+      icon: '#️⃣',
+      label: '生成话题标签',
+      command:
+        '请为这篇内容生成5-8个合适的小红书话题标签，包括热门标签和精准标签',
+      color: 'text-blue-600 border-blue-600 hover:bg-blue-50',
+    },
+    {
+      id: 'add-emoji',
+      icon: '😊',
+      label: '添加表情符号',
+      command: '请在内容中适当添加表情符号，让文案更生动活泼，符合小红书的风格',
+      color: 'text-orange-600 border-orange-600 hover:bg-orange-50',
+    },
+    {
+      id: 'seo-optimize',
+      icon: '🔍',
+      label: 'SEO优化',
+      command: '请优化这个内容的关键词分布，提高在小红书搜索中的曝光率',
+      color: 'text-teal-600 border-teal-600 hover:bg-teal-50',
+    },
+  ];
 
-  const handleViewFullContent = () => {
-    console.log('View full content clicked');
-    // TODO: Implement view full content functionality
+  const handleCommandClick = (command: string) => {
+    onCommandClick?.(command);
   };
 
   return (
@@ -82,7 +132,7 @@ const CollectedContentMessage: React.FC<{
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-sm">📸</span>
                 <span className="text-caption text-neutral-700">
-                  Images ({collectedData.images.length})
+                  图片 ({collectedData.images.length})
                 </span>
               </div>
               <div className="grid grid-cols-3 gap-2">
@@ -91,7 +141,7 @@ const CollectedContentMessage: React.FC<{
                     key={index}
                     src={img}
                     alt={`Collected image ${index + 1}`}
-                    className="w-full h-16 object-cover rounded border-neutral-300"
+                    className="w-[40px] h-[40px] object-cover rounded border-neutral-300"
                   />
                 ))}
               </div>
@@ -103,7 +153,7 @@ const CollectedContentMessage: React.FC<{
             <div className="mb-3">
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-sm">📝</span>
-                <span className="text-caption text-neutral-700">Title:</span>
+                <span className="text-caption text-neutral-700">标题:</span>
               </div>
               <p className="text-sm text-neutral-900 ml-6">
                 {collectedData.title}
@@ -116,7 +166,7 @@ const CollectedContentMessage: React.FC<{
             <div className="mb-3">
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-sm">📄</span>
-                <span className="text-caption text-neutral-700">Content:</span>
+                <span className="text-caption text-neutral-700">内容:</span>
               </div>
               <p className="text-sm text-neutral-900 ml-6 line-clamp-3">
                 {collectedData.content.substring(0, 150)}
@@ -125,22 +175,30 @@ const CollectedContentMessage: React.FC<{
             </div>
           )}
 
-          {/* Action buttons */}
-          <div className="flex gap-2 mt-3">
-            <button
-              onClick={handleGenerateIdeas}
-              className="flex items-center gap-1 px-3 py-1.5 text-caption text-xhs-red border-xhs-red rounded hover:bg-xhs-red-light transition-colors"
-            >
-              <span>✨</span>
-              <span>Generate Ideas</span>
-            </button>
-            <button
-              onClick={handleViewFullContent}
-              className="flex items-center gap-1 px-3 py-1.5 text-caption text-neutral-700 border-neutral-300 rounded hover:bg-neutral-50 transition-colors"
-            >
-              <span>📋</span>
-              <span>View Full Content</span>
-            </button>
+          {/* Quick Commands */}
+          <div className="mt-4 pt-3 border-t border-neutral-200">
+            <h4 className="text-caption font-medium text-neutral-700 mb-3">
+              快速优化命令
+            </h4>
+            <div className="grid grid-cols-2 gap-2">
+              {commonCommands.map((cmd) => (
+                <button
+                  key={cmd.id}
+                  onClick={() => handleCommandClick(cmd.command)}
+                  className={`flex items-center gap-2 px-3 py-2 text-caption border rounded-lg transition-colors ${cmd.color}`}
+                >
+                  <span className="text-sm">{cmd.icon}</span>
+                  <span className="text-xs font-medium">{cmd.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Additional Tip */}
+          <div className="mt-3 pt-3 border-t border-neutral-200">
+            <p className="text-micro text-neutral-500 text-center">
+              💡 如有其他要求，请直接在下方输入框输入
+            </p>
           </div>
         </div>
       </div>
@@ -148,15 +206,25 @@ const CollectedContentMessage: React.FC<{
   );
 };
 
-// Regular Message Component
+// Unified Message Component
 const MessageBubble: React.FC<{
   message: ChatMessage;
   onApply?: (messageId: string) => void;
-}> = ({ message, onApply }) => {
-  const isUser = message.sender === 'user';
-  const isSystem = message.sender === 'system';
+  onCommandClick?: (command: string) => void;
+}> = ({ message, onApply, onCommandClick }) => {
+  // Handle collected content type
+  if (message.type === 'collected' && message.collectedData) {
+    return (
+      <CollectedContentMessage
+        collectedData={message.collectedData}
+        timestamp={message.timestamp}
+        onCommandClick={onCommandClick}
+      />
+    );
+  }
 
-  if (isSystem) {
+  // Handle system messages
+  if (message.sender === 'system') {
     return (
       <div className="text-center my-4">
         <span className="text-caption text-neutral-500 bg-neutral-100 px-3 py-1 rounded-full">
@@ -166,6 +234,59 @@ const MessageBubble: React.FC<{
     );
   }
 
+  const isUser = message.sender === 'user';
+  const isAI = message.sender === 'ai';
+
+  // Handle AI generated content with JSON format
+  if (isAI && message.generatedData) {
+    return (
+      <div className="flex mb-4 justify-start">
+        <div className="max-w-[280px]">
+          {/* Avatar and sender */}
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs">
+              🤖
+            </div>
+            <span className="text-micro text-neutral-500">AI Assistant</span>
+            <span className="text-micro text-neutral-500 ml-auto">
+              {message.timestamp.toLocaleTimeString()}
+            </span>
+          </div>
+
+          {/* Generated content card */}
+          <div className="bg-white border-neutral-300 rounded-lg p-3 shadow-sm">
+            <div className="mb-3">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-sm">✨</span>
+                <span className="text-caption font-medium text-neutral-700">优化后的标题:</span>
+              </div>
+              <p className="text-sm text-neutral-900 font-medium">{message.generatedData.title}</p>
+            </div>
+
+            <div className="mb-3">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-sm">📝</span>
+                <span className="text-caption font-medium text-neutral-700">优化后的内容:</span>
+              </div>
+              <div className="text-sm text-neutral-900 whitespace-pre-wrap">{message.generatedData.content}</div>
+            </div>
+
+            {/* Apply button */}
+            {message.showApplyButton && (
+              <div className="mt-3">
+                <ApplyButton
+                  onClick={() => onApply?.(message.id)}
+                  isLoading={message.isApplying}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Handle regular text messages
   return (
     <div className={`flex mb-4 ${isUser ? 'justify-end' : 'justify-start'}`}>
       <div className="max-w-[280px]">
@@ -289,9 +410,7 @@ const ChatInput: React.FC<{
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   collectedContent,
 }) => {
-  const [messages, setMessages] = useState<
-    (ChatMessage | CollectedContentMessage)[]
-  >([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -307,23 +426,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   // Handle collected content - auto-populate when received
   useEffect(() => {
     if (collectedContent) {
-      const collectedMessage: CollectedContentMessage = {
+      const collectedMessage: ChatMessage = {
         id: `collected-${Date.now()}`,
         type: 'collected',
+        content: '',
         sender: 'system',
         timestamp: new Date(),
         collectedData: collectedContent,
-      };
-
-      const aiResponseMessage: ChatMessage = {
-        id: `ai-response-${Date.now()}`,
-        type: 'ai',
-        sender: 'ai',
-        content:
-          "I've collected your content! I can help:\n• Improve the title\n• Add engaging hashtags\n• Enhance description\n\nWhat would you like me to focus on?",
-        timestamp: new Date(),
-        showApplyButton: true,
-        isApplying: false,
       };
 
       setMessages([collectedMessage]);
@@ -345,21 +454,82 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const aiMessage: ChatMessage = {
-        id: `ai-${Date.now()}`,
-        type: 'ai',
-        sender: 'ai',
-        content: `I understand you want to: "${messageContent}"\n\nHere's my suggestion for your Xiaohongshu post:\n\n✨ Enhanced content with engaging elements\n📱 Optimized for mobile viewing\n🎯 Targeted hashtags included\n\nWould you like me to apply these improvements to your page?`,
-        timestamp: new Date(),
-        showApplyButton: true,
-        isApplying: false,
-      };
+    try {
+      const aiConfig = await getAIConfig();
+      const aiService = new AIService(aiConfig);
+      
+      // Build conversation history from current messages
+      const conversationHistory = messages.filter(msg => msg.type !== 'collected').map(msg => ({
+        sender: msg.sender as 'user' | 'ai',
+        content: msg.content
+      }));
+
+      // Add current user message to history
+      conversationHistory.push({
+        sender: 'user',
+        content: messageContent
+      });
+
+      const chatMessages = buildChatMessages({
+        message: messageContent,
+        conversationHistory,
+        context: collectedContent,
+      });
+
+      const response = await aiService.chatCompletion(chatMessages);
+      
+      // Try to parse response as JSON first
+      let aiMessage: ChatMessage;
+      try {
+        const parsedResponse = JSON.parse(response.content);
+        if (parsedResponse.title && parsedResponse.content) {
+          // It's a generated content response
+          aiMessage = {
+            id: `ai-${Date.now()}`,
+            type: 'ai',
+            sender: 'ai',
+            content: '',
+            timestamp: new Date(),
+            showApplyButton: true,
+            isApplying: false,
+            generatedData: {
+              title: parsedResponse.title,
+              content: parsedResponse.content
+            }
+          };
+        } else {
+          throw new Error('Invalid JSON format');
+        }
+      } catch {
+        // It's a regular text response
+        aiMessage = {
+          id: `ai-${Date.now()}`,
+          type: 'ai',
+          sender: 'ai',
+          content: response.content,
+          timestamp: new Date(),
+          showApplyButton: false,
+          isApplying: false,
+        };
+      }
 
       setMessages((prev) => [...prev, aiMessage]);
+    } catch (error) {
+      console.error('AI request failed:', error);
+      
+      // Add error message
+      const errorMessage: ChatMessage = {
+        id: `error-${Date.now()}`,
+        type: 'system',
+        sender: 'system',
+        content: `❌ AI请求失败: ${error instanceof Error ? error.message : '未知错误'}`,
+        timestamp: new Date(),
+      };
+      
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   const handleApplyMessage = async (messageId: string) => {
@@ -368,7 +538,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     // Update message to show loading state
     setMessages((prev) =>
       prev.map((msg) =>
-        'id' in msg && msg.id === messageId ? { ...msg, isApplying: true } : msg
+        msg.id === messageId ? { ...msg, isApplying: true } : msg
       )
     );
 
@@ -410,7 +580,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       // Reset loading state
       setMessages((prev) =>
         prev.map((msg) =>
-          'id' in msg && msg.id === messageId
+          msg.id === messageId
             ? { ...msg, isApplying: false }
             : msg
         )
@@ -438,27 +608,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           </div>
         )}
 
-        {messages.map((message) => {
-          if (message.type === 'collected') {
-            const collectedMsg = message as CollectedContentMessage;
-            return (
-              <CollectedContentMessage
-                key={message.id}
-                collectedData={collectedMsg.collectedData}
-                timestamp={collectedMsg.timestamp}
-              />
-            );
-          } else {
-            const chatMsg = message as ChatMessage;
-            return (
-              <MessageBubble
-                key={chatMsg.id}
-                message={chatMsg}
-                onApply={handleApplyMessage}
-              />
-            );
-          }
-        })}
+        {messages.map((message) => (
+          <MessageBubble
+            key={message.id}
+            message={message}
+            onApply={handleApplyMessage}
+            onCommandClick={handleSendMessage}
+          />
+        ))}
 
         {/* Loading indicator */}
         {isLoading && (
