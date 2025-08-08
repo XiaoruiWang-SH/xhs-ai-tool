@@ -87,12 +87,12 @@ const CollectedContentMessage: React.FC<{
 
   return (
     <div className="mb-4 max-w-full">
-      <div 
+      <div
         className="rounded-lg p-4 border"
-        style={{ 
-          backgroundColor: 'var(--xhs-red-light)', 
+        style={{
+          backgroundColor: 'var(--xhs-red-light)',
           borderColor: 'var(--chrome-border)',
-          boxShadow: 'var(--shadow-sm)'
+          boxShadow: 'var(--shadow-sm)',
         }}
       >
         {/* Header */}
@@ -202,7 +202,11 @@ const MessageBubble: React.FC<{
     <div className={`flex mb-4 ${isUser ? 'justify-end' : 'justify-start'}`}>
       <div className="max-w-[280px]">
         {/* Avatar and sender */}
-        <div className={`flex items-center gap-2 mb-1 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
+        <div
+          className={`flex items-center gap-2 mb-1 ${
+            isUser ? 'flex-row-reverse' : 'flex-row'
+          }`}
+        >
           <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs">
             {isUser ? '👤' : '🤖'}
           </div>
@@ -223,7 +227,7 @@ const MessageBubble: React.FC<{
           }`}
           style={{ boxShadow: 'var(--shadow-sm)' }}
         >
-          <div className="text-body whitespace-pre-wrap break-words">
+          <div className="text-black whitespace-pre-wrap break-words">
             {message.content}
           </div>
 
@@ -297,7 +301,7 @@ const ChatInput: React.FC<{
             placeholder="Type your message..."
             disabled={disabled}
             rows={1}
-            className="w-full text-body border border-neutral-300 rounded-lg px-3 py-2 resize-none focus:border-xhs-red focus:outline-none disabled:bg-neutral-50 disabled:text-neutral-400"
+            className="w-full text-black border border-neutral-300 rounded-lg px-3 py-2 resize-none focus:border-xhs-red focus:outline-none disabled:bg-neutral-50 disabled:text-neutral-400"
             style={{ minHeight: '36px', maxHeight: '120px' }}
           />
         </div>
@@ -317,8 +321,12 @@ const ChatInput: React.FC<{
 };
 
 // Main ChatInterface Component
-export const ChatInterface: React.FC<ChatInterfaceProps> = ({ collectedContent }) => {
-  const [messages, setMessages] = useState<(ChatMessage | CollectedContentMessage)[]>([]);
+export const ChatInterface: React.FC<ChatInterfaceProps> = ({
+  collectedContent,
+}) => {
+  const [messages, setMessages] = useState<
+    (ChatMessage | CollectedContentMessage)[]
+  >([]);
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -346,7 +354,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ collectedContent }
         id: `ai-response-${Date.now()}`,
         type: 'ai',
         sender: 'ai',
-        content: "I've collected your content! I can help:\n• Improve the title\n• Add engaging hashtags\n• Enhance description\n\nWhat would you like me to focus on?",
+        content:
+          "I've collected your content! I can help:\n• Improve the title\n• Add engaging hashtags\n• Enhance description\n\nWhat would you like me to focus on?",
         timestamp: new Date(),
         showApplyButton: true,
         isApplying: false,
@@ -368,7 +377,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ collectedContent }
       timestamp: new Date(),
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
 
     // Simulate AI response
@@ -383,20 +392,20 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ collectedContent }
         isApplying: false,
       };
 
-      setMessages(prev => [...prev, aiMessage]);
+      setMessages((prev) => [...prev, aiMessage]);
       setIsLoading(false);
     }, 1500);
   };
 
   const handleApplyMessage = async (messageId: string) => {
     console.log('Applying message:', messageId);
-    
+
     // Update message to show loading state
-    setMessages(prev => prev.map(msg => 
-      'id' in msg && msg.id === messageId
-        ? { ...msg, isApplying: true }
-        : msg
-    ));
+    setMessages((prev) =>
+      prev.map((msg) =>
+        'id' in msg && msg.id === messageId ? { ...msg, isApplying: true } : msg
+      )
+    );
 
     try {
       // Send message to content script to apply content
@@ -417,7 +426,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ collectedContent }
           content: '✅ Content successfully applied to page!',
           timestamp: new Date(),
         };
-        setMessages(prev => [...prev, successMessage]);
+        setMessages((prev) => [...prev, successMessage]);
       } else {
         throw new Error(response.error || 'Failed to apply content');
       }
@@ -431,14 +440,16 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ collectedContent }
         content: '❌ Failed to apply content. Please try again.',
         timestamp: new Date(),
       };
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages((prev) => [...prev, errorMessage]);
     } finally {
       // Reset loading state
-      setMessages(prev => prev.map(msg => 
-        'id' in msg && msg.id === messageId
-          ? { ...msg, isApplying: false }
-          : msg
-      ));
+      setMessages((prev) =>
+        prev.map((msg) =>
+          'id' in msg && msg.id === messageId
+            ? { ...msg, isApplying: false }
+            : msg
+        )
+      );
     }
   };
 
@@ -449,7 +460,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ collectedContent }
         {messages.length === 0 && (
           <div className="text-center py-8">
             <div className="text-4xl mb-4">💬</div>
-            <h3 className="text-title text-neutral-900 mb-2">Welcome to Xiaohongshu AI</h3>
+            <h3 className="text-title text-neutral-900 mb-2">
+              Welcome to Xiaohongshu AI
+            </h3>
             <p className="text-body text-neutral-700 mb-4">
               I'm here to help create engaging content for your posts.
             </p>
@@ -487,13 +500,22 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ collectedContent }
           <div className="flex justify-start mb-4">
             <div className="max-w-[280px]">
               <div className="flex items-center gap-2 mb-1">
-                <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs">🤖</div>
-                <span className="text-micro text-neutral-500">AI Assistant</span>
+                <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs">
+                  🤖
+                </div>
+                <span className="text-micro text-neutral-500">
+                  AI Assistant
+                </span>
               </div>
-              <div className="bg-white border border-neutral-300 rounded-lg p-3" style={{ boxShadow: 'var(--shadow-sm)' }}>
+              <div
+                className="bg-white border border-neutral-300 rounded-lg p-3"
+                style={{ boxShadow: 'var(--shadow-sm)' }}
+              >
                 <div className="flex items-center gap-2">
                   <div className="animate-pulse">💭</div>
-                  <span className="text-body text-neutral-500">AI is thinking...</span>
+                  <span className="text-body text-neutral-500">
+                    AI is thinking...
+                  </span>
                 </div>
               </div>
             </div>
@@ -504,10 +526,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ collectedContent }
       </div>
 
       {/* Input area */}
-      <ChatInput 
-        onSendMessage={handleSendMessage}
-        disabled={isLoading}
-      />
+      <ChatInput onSendMessage={handleSendMessage} disabled={isLoading} />
     </div>
   );
 };
