@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { ChatInterface } from './components/ChatInterface'
+import { ChatInterface } from './components/ChatInterface2'
 import { SettingsPanel } from './components/SettingsPanel'
 
 interface AiTagClickData {
@@ -106,8 +106,8 @@ function App() {
 
   return (
     <>
-      <div className="h-screen flex flex-col">
-        <div className="flex justify-between items-center p-2.5">
+      <div>
+        <div className="flex justify-between items-center p-2.5 relative">
           <h1 className="m-0 text-lg">小红书AI工具助手</h1>
           <button
             onClick={() => setShowSettings(true)}
@@ -143,11 +143,7 @@ function App() {
         </div>
 
         {/* 标签页内容 */}
-        <div
-          className={`flex-1 overflow-auto ${
-            activeTab === 'chat' ? 'p-0' : 'p-2.5'
-          }`}
-        >
+        <div className={`${activeTab === 'chat' ? 'p-0' : 'p-2.5'}`}>
           {activeTab === 'content' && (
             <div>
               {/* 内容收集和编辑区域 */}
