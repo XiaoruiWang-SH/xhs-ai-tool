@@ -189,9 +189,7 @@ const MessageBubble: React.FC<{
         {/* Message bubble */}
         <div
           className={`rounded-lg p-3 shadow-sm ${
-            isUser
-              ? 'bg-blue-500 text-white'
-              : 'bg-white border-neutral-300'
+            isUser ? 'bg-blue-500 text-white' : 'bg-white border-neutral-300'
           }`}
         >
           <div className="text-sm whitespace-pre-wrap break-words">
@@ -328,7 +326,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         isApplying: false,
       };
 
-      setMessages([collectedMessage, aiResponseMessage]);
+      setMessages([collectedMessage]);
     }
   }, [collectedContent]);
 
@@ -474,9 +472,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   AI Assistant
                 </span>
               </div>
-              <div
-                className="bg-white border-neutral-300 rounded-lg p-3 shadow-sm"
-              >
+              <div className="bg-white border-neutral-300 rounded-lg p-3 shadow-sm">
                 <div className="flex items-center gap-2">
                   <div className="animate-pulse">💭</div>
                   <span className="text-sm text-neutral-500">
