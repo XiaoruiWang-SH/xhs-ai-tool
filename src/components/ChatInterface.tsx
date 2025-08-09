@@ -18,9 +18,9 @@ const ApplyButton: React.FC<{
     <button
       onClick={onClick}
       disabled={isLoading}
-      className={`bg-xhs-red hover:bg-xhs-red-hover text-white px-4 py-2 rounded-md text-caption font-medium border-0 disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200 hover:transform hover:-translate-y-0.5 ${className}`}
+      className={`bg-xhs-red hover:bg-xhs-red-hover text-white px-4 py-2 rounded-full text-caption font-medium border-0 disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200 hover:transform hover:-translate-y-0.5 shadow-md hover:shadow-lg ${className}`}
     >
-      {isLoading ? '应用中...' : '📋 Apply to Page'}
+      {isLoading ? '应用中...' : '📋 应用到页面'}
     </button>
   );
 };
@@ -35,9 +35,9 @@ const RegenerateButton: React.FC<{
     <button
       onClick={onClick}
       disabled={isLoading}
-      className={`bg-neutral-600 hover:bg-neutral-700 text-white px-4 py-2 rounded-md text-caption font-medium border-0 disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200 hover:transform hover:-translate-y-0.5 ${className}`}
+      className={`bg-white border-2 border-neutral-200 hover:border-xhs-red text-neutral-600 hover:text-xhs-red px-4 py-2 rounded-full text-caption font-medium disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200 hover:transform hover:-translate-y-0.5 shadow-sm hover:shadow-md ${className}`}
     >
-      {isLoading ? '重新生成中...' : '🔄 Regenerate'}
+      {isLoading ? '重新生成中...' : '🔄 重新生成'}
     </button>
   );
 };
@@ -202,6 +202,88 @@ const CollectedContentMessage: React.FC<{
   );
 };
 
+// AI Result Display Component - Enhanced Xiaohongshu Style
+const AIResultDisplay: React.FC<{
+  message: ChatMessage;
+  onApply?: (messageId: string) => void;
+  onRegenerate?: () => void;
+  isLoading?: boolean;
+}> = ({ message, onApply, onRegenerate, isLoading = false }) => {
+  if (message.type !== 'result' || !message.generatedData) {
+    return null;
+  }
+
+  return (
+    <div className="flex mb-6 justify-start">
+      <div className="max-w-[300px] w-full">
+        <div className={`flex items-center mb-1 flex-row`}>
+          <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs">
+            🤖
+          </div>
+          <span className="text-micro text-neutral-500">小红书 AI 助手</span>
+          <span className="text-micro text-neutral-500 ml-auto">
+            {message.timestamp.toLocaleTimeString()}
+          </span>
+        </div>
+
+        {/* Content Card with Xiaohongshu styling */}
+        <div className="bg-white rounded-2xl shadow-lg border border-neutral-100 overflow-hidden">
+          <div className="p-4">
+            {/* Title Section */}
+            <div className="mb-4">
+              <div className="flex items-center gap-1 mb-2">
+                <div className="w-6 h-6 rounded-full bg-yellow-100 flex items-center justify-center">
+                  <span className="text-yellow-600 text-sm">📝</span>
+                </div>
+                <span className="text-caption font-semibold text-neutral-700">
+                  标题:
+                </span>
+              </div>
+              <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl py-1 px-3 border border-yellow-200">
+                <p className="text-neutral-900 font-medium text-sm leading-relaxed">
+                  {message.generatedData.title}
+                </p>
+              </div>
+            </div>
+
+            {/* Content Section */}
+            <div className="mb-5">
+              <div className="flex items-center gap-1 mb-2">
+                <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
+                  <span className="text-blue-600 text-sm">📖</span>
+                </div>
+                <span className="text-caption font-semibold text-neutral-700">
+                  内容:
+                </span>
+              </div>
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl py-1 px-3 border border-blue-200">
+                <div className="text-neutral-900 text-sm leading-relaxed whitespace-pre-wrap">
+                  {message.generatedData.content}
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-around items-center">
+              <ApplyButton
+                onClick={() => onApply?.(message.id)}
+                isLoading={isLoading}
+              />
+              <RegenerateButton
+                onClick={() => onRegenerate?.()}
+                isLoading={isLoading}
+              />
+            </div>
+          </div>
+
+          {/* Bottom accent */}
+          {/* <div className="h-0.5 bg-gradient-to-r from-transparent via-xhs-red to-transparent opacity-30"></div> */}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Unified Message Component
 const MessageBubble: React.FC<{
   message: ChatMessage;
@@ -247,55 +329,11 @@ const MessageBubble: React.FC<{
   // Handle AI generated content with JSON format
   if (message.type === 'result' && message.generatedData) {
     return (
-      <div className="flex mb-4 justify-start">
-        <div className="max-w-[280px]">
-          {/* Avatar and sender */}
-          <div className="flex items-center gap-2 mb-1">
-            <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs">
-              🤖
-            </div>
-            <span className="text-micro text-neutral-500">AI Assistant</span>
-            <span className="text-micro text-neutral-500 ml-auto">
-              {message.timestamp.toLocaleTimeString()}
-            </span>
-          </div>
-
-          {/* Generated content card */}
-          <div className="bg-white border-neutral-300 rounded-lg p-3 shadow-sm">
-            <div className="mb-3">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-sm">✨</span>
-                <span className="text-caption font-medium text-neutral-700">
-                  优化后的标题:
-                </span>
-              </div>
-              <p className="text-sm text-neutral-900 font-medium">
-                {message.generatedData.title}
-              </p>
-            </div>
-
-            <div className="mb-3">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-sm">📝</span>
-                <span className="text-caption font-medium text-neutral-700">
-                  优化后的内容:
-                </span>
-              </div>
-              <div className="text-sm text-neutral-900 whitespace-pre-wrap">
-                {message.generatedData.content}
-              </div>
-            </div>
-
-            {/* Action buttons */}
-            {message.type === 'result' && (
-              <div className="mt-3 flex gap-2">
-                <ApplyButton onClick={() => onApply?.(message.id)} />
-                <RegenerateButton onClick={handleRegenerateClick} />
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+      <AIResultDisplay 
+        message={message}
+        onApply={onApply}
+        onRegenerate={handleRegenerateClick}
+      />
     );
   }
 
