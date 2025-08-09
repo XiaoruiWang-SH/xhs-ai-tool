@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 
 interface AIConfig {
   provider: 'openai' | 'claude' | 'custom';
@@ -21,7 +21,7 @@ interface SettingsPanelProps {
   onClose: () => void;
 }
 
-export const SettingsPanel: React.FC<SettingsPanelProps> = ({ onClose }) => {
+const SettingsPanelComponent: React.FC<SettingsPanelProps> = ({ onClose }) => {
   const [config, setConfig] = useState<AIConfig>({
     provider: 'openai',
     apiKey: '',
@@ -475,3 +475,6 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ onClose }) => {
     </div>
   );
 };
+
+// Export memoized component
+export const SettingsPanel = memo(SettingsPanelComponent);

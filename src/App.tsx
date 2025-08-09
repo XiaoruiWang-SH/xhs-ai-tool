@@ -3,6 +3,7 @@ import { Layout, TabContent } from './components/Layout';
 import { ChatInterface } from './components/ChatInterface';
 import { SettingsPanel } from './components/SettingsPanel';
 import type { TabType } from './components/Layout';
+import type { ChatMessage } from './components/ChatInterface';
 
 interface CollectedContent {
   images: string[];
@@ -20,6 +21,8 @@ function App() {
   const [collectedContent, setCollectedContent] = useState<ContentData | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('chat');
   const [connectionStatus] = useState<'connected' | 'connecting' | 'error'>('connected');
+  // Global chat messages state to persist across tab switches
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
 
   useEffect(() => {
     // 监听来自background script的消息
@@ -51,7 +54,11 @@ function App() {
       onTabChange={handleTabChange}
     >
       <TabContent tabType="chat">
-        <ChatInterface collectedContent={collectedContent?.content} />
+        <ChatInterface 
+          collectedContent={collectedContent?.content}
+          messages={chatMessages}
+          onMessagesChange={setChatMessages}
+        />
       </TabContent>
       
       <TabContent tabType="settings">

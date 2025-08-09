@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, memo } from 'react';
 import { AIService, buildChatMessages, getAIConfig } from '../services/AIService';
 
 // Message Types according to design spec
@@ -31,6 +31,8 @@ export interface AiGeneratedContent {
 
 interface ChatInterfaceProps {
   collectedContent?: CollectedContent;
+  messages?: ChatMessage[];
+  onMessagesChange?: (messages: ChatMessage[]) => void;
 }
 
 // Apply Button Component
@@ -433,54 +435,31 @@ const ChatInput: React.FC<{
 };
 
 // Main ChatInterface Component
-export const ChatInterface: React.FC<ChatInterfaceProps> = ({
+const ChatInterfaceComponent: React.FC<ChatInterfaceProps> = ({
   collectedContent,
+  messages: externalMessages,
+  onMessagesChange,
 }) => {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  // Use external messages if provided, otherwise fall back to local state
+  const [localMessages, setLocalMessages] = useState<ChatMessage[]>([]);
+  const messages = externalMessages || localMessages;
+  
+  // Create a unified setMessages function that works with both external and local state
+  const setMessages = (newMessages: ChatMessage[] | ((prev: ChatMessage[]) => ChatMessage[])) => {
+    if (onMessagesChange) {
+      if (typeof newMessages === 'function') {
+        const currentMessages = externalMessages || [];
+        onMessagesChange(newMessages(currentMessages));
+      } else {
+        onMessagesChange(newMessages);
+      }
+    } else {
+      setLocalMessages(newMessages);
+    }
+  };
+  
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  // Load chat history from Chrome storage on component mount
-  useEffect(() => {
-    const loadChatHistory = async () => {
-      try {
-        const result = await chrome.storage.local.get(['chatHistory']);
-        if (result.chatHistory && Array.isArray(result.chatHistory)) {
-          // Convert timestamp strings back to Date objects
-          const restoredMessages = result.chatHistory.map((msg: any) => ({
-            ...msg,
-            timestamp: new Date(msg.timestamp)
-          }));
-          setMessages(restoredMessages);
-        }
-      } catch (error) {
-        console.error('Failed to load chat history:', error);
-      }
-    };
-
-    loadChatHistory();
-  }, []);
-
-  // Save chat history to Chrome storage whenever messages change
-  useEffect(() => {
-    const saveChatHistory = async () => {
-      try {
-        // Convert Date objects to strings for storage
-        const messagesForStorage = messages.map(msg => ({
-          ...msg,
-          timestamp: msg.timestamp.toISOString()
-        }));
-        await chrome.storage.local.set({ chatHistory: messagesForStorage });
-      } catch (error) {
-        console.error('Failed to save chat history:', error);
-      }
-    };
-
-    // Only save if there are messages to avoid overwriting with empty array on initial load
-    if (messages.length > 0) {
-      saveChatHistory();
-    }
-  }, [messages]);
 
   // Auto-scroll to bottom
   const scrollToBottom = () => {
@@ -491,22 +470,33 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     scrollToBottom();
   }, [messages]);
 
-  // Handle collected content - add to current conversation when received
+  // Handle collected content - add to current conversation when received (avoid duplicates)
   useEffect(() => {
     if (collectedContent) {
-      const collectedMessage: ChatMessage = {
-        id: `collected-${Date.now()}`,
-        type: 'collected',
-        content: '',
-        sender: 'system',
-        timestamp: new Date(),
-        collectedData: collectedContent,
-      };
+      // Check if this collected content is already in the messages
+      const isDuplicate = messages.some(msg => 
+        msg.type === 'collected' && 
+        msg.collectedData &&
+        msg.collectedData.title === collectedContent.title &&
+        msg.collectedData.content === collectedContent.content &&
+        JSON.stringify(msg.collectedData.images) === JSON.stringify(collectedContent.images)
+      );
 
-      // Add to existing messages instead of replacing them
-      setMessages((prev) => [...prev, collectedMessage]);
+      if (!isDuplicate) {
+        const collectedMessage: ChatMessage = {
+          id: `collected-${Date.now()}`,
+          type: 'collected',
+          content: '',
+          sender: 'system',
+          timestamp: new Date(),
+          collectedData: collectedContent,
+        };
+
+        // Add to existing messages instead of replacing them
+        setMessages((prev) => [...prev, collectedMessage]);
+      }
     }
-  }, [collectedContent]);
+  }, [collectedContent, messages]);
 
   const handleSendMessage = async (messageContent: string) => {
     if (isLoading) return;
@@ -812,20 +802,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   };
 
-  // Clear chat history
-  const clearChatHistory = async () => {
-    try {
-      await chrome.storage.local.remove(['chatHistory']);
-      setMessages([]);
-    } catch (error) {
-      console.error('Failed to clear chat history:', error);
-    }
-  };
-
-  // Add a way to clear chat from UI (optional - can be exposed through settings)
+  // Clear chat history (in-memory only)
   const handleClearChat = () => {
     if (window.confirm('确定要清除所有聊天记录吗？')) {
-      clearChatHistory();
+      setMessages([]);
     }
   };
 
@@ -904,3 +884,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     </div>
   );
 };
+
+// Export memoized component
+export const ChatInterface = memo(ChatInterfaceComponent);
