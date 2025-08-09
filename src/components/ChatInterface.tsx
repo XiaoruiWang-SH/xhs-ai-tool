@@ -1,39 +1,12 @@
-import React, { useState, useEffect, useRef, memo } from 'react';
-import { AIService, buildChatMessages, getAIConfig } from '../services/AIService';
-
-// Message Types according to design spec
-export type MessageType = 'user' | 'ai' | 'system' | 'collected';
-
-export interface ChatMessage {
-  id: string;
-  type: MessageType;
-  content: string;
-  sender: 'user' | 'ai' | 'system';
-  timestamp: Date;
-  showApplyButton?: boolean;
-  isApplying?: boolean;
-  // For collected content type
-  collectedData?: CollectedContent;
-  // For AI generated content
-  generatedData?: AiGeneratedContent;
-}
-
-export interface CollectedContent {
-  images: string[];
-  title: string;
-  content: string;
-}
-
-export interface AiGeneratedContent {
-  title: string;
-  content: string;
-}
-
-interface ChatInterfaceProps {
-  collectedContent?: CollectedContent;
-  messages?: ChatMessage[];
-  onMessagesChange?: (messages: ChatMessage[]) => void;
-}
+import React, { useState, useEffect, useRef, memo, useCallback } from 'react';
+import {
+  AIService,
+  buildChatMessages,
+  getAIConfig,
+  validateContentResponse,
+} from '../services/AIService';
+import { useMessages, useMessagesDispatch } from '../services/messageHooks';
+import type { ChatMessage, CollectedContent } from '../services/messageTypes';
 
 // Apply Button Component
 const ApplyButton: React.FC<{
@@ -229,9 +202,22 @@ const CollectedContentMessage: React.FC<{
 const MessageBubble: React.FC<{
   message: ChatMessage;
   onApply?: (messageId: string) => void;
-  onRegenerate?: (messageId: string) => void;
   onCommandClick?: (command: string) => void;
-}> = ({ message, onApply, onRegenerate, onCommandClick }) => {
+}> = ({ message, onApply, onCommandClick }) => {
+  // Handle regenerate click with a specific regenerate prompt
+  const handleRegenerateClick = () => {
+    if (!onCommandClick) return;
+
+    // Create a specific regenerate prompt that requests a different version
+    const regeneratePrompt = `请基于之前的要求重新生成一个不同版本的标题和内容。要求：
+1. 提供与之前不同的创意角度和表达方式
+2. 保持相同的主题和核心信息
+
+请生成一个全新的、有创意的版本。`;
+
+    onCommandClick(regeneratePrompt);
+  };
+
   // Handle collected content type
   if (message.type === 'collected' && message.collectedData) {
     return (
@@ -254,11 +240,8 @@ const MessageBubble: React.FC<{
     );
   }
 
-  const isUser = message.sender === 'user';
-  const isAI = message.sender === 'ai';
-
   // Handle AI generated content with JSON format
-  if (isAI && message.generatedData) {
+  if (message.type === 'result' && message.generatedData) {
     return (
       <div className="flex mb-4 justify-start">
         <div className="max-w-[280px]">
@@ -278,30 +261,32 @@ const MessageBubble: React.FC<{
             <div className="mb-3">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-sm">✨</span>
-                <span className="text-caption font-medium text-neutral-700">优化后的标题:</span>
+                <span className="text-caption font-medium text-neutral-700">
+                  优化后的标题:
+                </span>
               </div>
-              <p className="text-sm text-neutral-900 font-medium">{message.generatedData.title}</p>
+              <p className="text-sm text-neutral-900 font-medium">
+                {message.generatedData.title}
+              </p>
             </div>
 
             <div className="mb-3">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-sm">📝</span>
-                <span className="text-caption font-medium text-neutral-700">优化后的内容:</span>
+                <span className="text-caption font-medium text-neutral-700">
+                  优化后的内容:
+                </span>
               </div>
-              <div className="text-sm text-neutral-900 whitespace-pre-wrap">{message.generatedData.content}</div>
+              <div className="text-sm text-neutral-900 whitespace-pre-wrap">
+                {message.generatedData.content}
+              </div>
             </div>
 
             {/* Action buttons */}
-            {message.showApplyButton && (
+            {message.type === 'result' && (
               <div className="mt-3 flex gap-2">
-                <ApplyButton
-                  onClick={() => onApply?.(message.id)}
-                  isLoading={message.isApplying}
-                />
-                <RegenerateButton
-                  onClick={() => onRegenerate?.(message.id)}
-                  isLoading={message.isApplying}
-                />
+                <ApplyButton onClick={() => onApply?.(message.id)} />
+                <RegenerateButton onClick={handleRegenerateClick} />
               </div>
             )}
           </div>
@@ -309,6 +294,8 @@ const MessageBubble: React.FC<{
       </div>
     );
   }
+
+  const isUser = message.sender === 'user';
 
   // Handle regular text messages
   return (
@@ -349,7 +336,7 @@ const MessageBubble: React.FC<{
                 isLoading={message.isApplying}
               />
               <RegenerateButton
-                onClick={() => onRegenerate?.(message.id)}
+                onClick={handleRegenerateClick}
                 isLoading={message.isApplying}
               />
             </div>
@@ -435,29 +422,11 @@ const ChatInput: React.FC<{
 };
 
 // Main ChatInterface Component
-const ChatInterfaceComponent: React.FC<ChatInterfaceProps> = ({
-  collectedContent,
-  messages: externalMessages,
-  onMessagesChange,
-}) => {
+const ChatInterfaceComponent = () => {
   // Use external messages if provided, otherwise fall back to local state
-  const [localMessages, setLocalMessages] = useState<ChatMessage[]>([]);
-  const messages = externalMessages || localMessages;
-  
-  // Create a unified setMessages function that works with both external and local state
-  const setMessages = (newMessages: ChatMessage[] | ((prev: ChatMessage[]) => ChatMessage[])) => {
-    if (onMessagesChange) {
-      if (typeof newMessages === 'function') {
-        const currentMessages = externalMessages || [];
-        onMessagesChange(newMessages(currentMessages));
-      } else {
-        onMessagesChange(newMessages);
-      }
-    } else {
-      setLocalMessages(newMessages);
-    }
-  };
-  
+  const messages = useMessages();
+  const messageDispatch = useMessagesDispatch();
+
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -466,37 +435,109 @@ const ChatInterfaceComponent: React.FC<ChatInterfaceProps> = ({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const requestAIResponse = useCallback(
+    async (messages: ChatMessage[]) => {
+      try {
+        setIsLoading(true);
+        const aiConfig = await getAIConfig();
+        const aiService = new AIService(aiConfig);
+
+        const chatMessages = buildChatMessages(messages, aiService.getProvider());
+
+        const response = await aiService.chatCompletion(chatMessages);
+
+        // Parse response as JSON (should always be JSON now)
+        let aiMessage: ChatMessage;
+        try {
+          // Clean the response content in case it has markdown code blocks or extra text
+          let cleanedContent = response.content.trim();
+
+          // Remove markdown code blocks if present
+          if (cleanedContent.startsWith('```json')) {
+            cleanedContent = cleanedContent
+              .replace(/^```json\s*/, '')
+              .replace(/```\s*$/, '');
+          } else if (cleanedContent.startsWith('```')) {
+            cleanedContent = cleanedContent
+              .replace(/^```\s*/, '')
+              .replace(/```\s*$/, '');
+          }
+
+          const parsedResponse = JSON.parse(cleanedContent);
+
+          // 使用JSON Schema验证响应格式
+          if (validateContentResponse(parsedResponse)) {
+            // Generated content response with structured data
+            aiMessage = {
+              id: `ai-${Date.now()}`,
+              type: 'result',
+              sender: 'assistant',
+              timestamp: new Date(),
+              generatedData: {
+                title: parsedResponse.title,
+                content: parsedResponse.content,
+              },
+            };
+          } else {
+            // 详细的验证错误信息
+            const errors = [];
+            if (!parsedResponse.title) errors.push('缺少title字段');
+            if (!parsedResponse.content) errors.push('缺少content字段');
+            if (parsedResponse.title && parsedResponse.title.length > 20) errors.push('标题超过20字符限制');
+            if (parsedResponse.content && parsedResponse.content.length > 1000) errors.push('内容超过1000字符限制');
+            
+            throw new Error(`JSON Schema验证失败: ${errors.join(', ')}`);
+          }
+        } catch (parseError) {
+          console.error('Failed to parse AI response as JSON:', parseError);
+          console.log('Original response:', response.content);
+
+          // Fallback: treat as text response and show error
+          aiMessage = {
+            id: `ai-${Date.now()}`,
+            type: 'ai',
+            sender: 'assistant',
+            content: `AI返回格式错误，原始回复：\n${response.content}`,
+            timestamp: new Date(),
+          };
+        }
+        if (messageDispatch) {
+          messageDispatch({
+            type: 'added',
+            data: aiMessage,
+          });
+        }
+      } catch (error) {
+        console.error('AI request failed:', error);
+
+        // Add error message
+        const errorMessage: ChatMessage = {
+          id: `error-${Date.now()}`,
+          type: 'ai',
+          sender: 'system',
+          content: `❌ AI请求失败: ${
+            error instanceof Error ? error.message : '未知错误'
+          }`,
+          timestamp: new Date(),
+        };
+
+        if (messageDispatch) {
+          messageDispatch({
+            type: 'added',
+            data: errorMessage,
+          });
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [messageDispatch]
+  );
+
+
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-
-  // Handle collected content - add to current conversation when received (avoid duplicates)
-  useEffect(() => {
-    if (collectedContent) {
-      // Check if this collected content is already in the messages
-      const isDuplicate = messages.some(msg => 
-        msg.type === 'collected' && 
-        msg.collectedData &&
-        msg.collectedData.title === collectedContent.title &&
-        msg.collectedData.content === collectedContent.content &&
-        JSON.stringify(msg.collectedData.images) === JSON.stringify(collectedContent.images)
-      );
-
-      if (!isDuplicate) {
-        const collectedMessage: ChatMessage = {
-          id: `collected-${Date.now()}`,
-          type: 'collected',
-          content: '',
-          sender: 'system',
-          timestamp: new Date(),
-          collectedData: collectedContent,
-        };
-
-        // Add to existing messages instead of replacing them
-        setMessages((prev) => [...prev, collectedMessage]);
-      }
-    }
-  }, [collectedContent, messages]);
 
   const handleSendMessage = async (messageContent: string) => {
     if (isLoading) return;
@@ -510,98 +551,15 @@ const ChatInterfaceComponent: React.FC<ChatInterfaceProps> = ({
       timestamp: new Date(),
     };
 
-    setMessages((prev) => [...prev, userMessage]);
-    setIsLoading(true);
-
-    try {
-      const aiConfig = await getAIConfig();
-      const aiService = new AIService(aiConfig);
-      
-      // Build conversation history from current messages
-      const conversationHistory = messages.filter(msg => msg.type !== 'collected').map(msg => ({
-        sender: msg.sender as 'user' | 'ai',
-        content: msg.content
-      }));
-
-      // Add current user message to history
-      conversationHistory.push({
-        sender: 'user',
-        content: messageContent
+    if (messageDispatch) {
+      messageDispatch({
+        type: 'added',
+        data: userMessage,
       });
 
-      const chatMessages = buildChatMessages({
-        message: messageContent,
-        conversationHistory,
-        context: collectedContent,
-      });
-
-      const response = await aiService.chatCompletion(chatMessages);
-      
-      // Parse response as JSON (should always be JSON now)
-      let aiMessage: ChatMessage;
-      try {
-        // Clean the response content in case it has markdown code blocks or extra text
-        let cleanedContent = response.content.trim();
-        
-        // Remove markdown code blocks if present
-        if (cleanedContent.startsWith('```json')) {
-          cleanedContent = cleanedContent.replace(/^```json\s*/, '').replace(/```\s*$/, '');
-        } else if (cleanedContent.startsWith('```')) {
-          cleanedContent = cleanedContent.replace(/^```\s*/, '').replace(/```\s*$/, '');
-        }
-        
-        const parsedResponse = JSON.parse(cleanedContent);
-        
-        if (parsedResponse.title && parsedResponse.content) {
-          // Generated content response with structured data
-          aiMessage = {
-            id: `ai-${Date.now()}`,
-            type: 'ai',
-            sender: 'ai',
-            content: '',
-            timestamp: new Date(),
-            showApplyButton: true,
-            isApplying: false,
-            generatedData: {
-              title: parsedResponse.title,
-              content: parsedResponse.content
-            }
-          };
-        } else {
-          throw new Error('Invalid JSON structure: missing title or content');
-        }
-      } catch (parseError) {
-        console.error('Failed to parse AI response as JSON:', parseError);
-        console.log('Original response:', response.content);
-        
-        // Fallback: treat as text response and show error
-        aiMessage = {
-          id: `ai-${Date.now()}`,
-          type: 'ai',
-          sender: 'ai',
-          content: `AI返回格式错误，原始回复：\n${response.content}`,
-          timestamp: new Date(),
-          showApplyButton: false,
-          isApplying: false,
-        };
-      }
-
-      setMessages((prev) => [...prev, aiMessage]);
-    } catch (error) {
-      console.error('AI request failed:', error);
-      
-      // Add error message
-      const errorMessage: ChatMessage = {
-        id: `error-${Date.now()}`,
-        type: 'system',
-        sender: 'system',
-        content: `❌ AI请求失败: ${error instanceof Error ? error.message : '未知错误'}`,
-        timestamp: new Date(),
-      };
-      
-      setMessages((prev) => [...prev, errorMessage]);
-    } finally {
-      setIsLoading(false);
+      // Get the updated messages list and call AI response
+      const updatedMessages = [...messages, userMessage];
+      await requestAIResponse(updatedMessages);
     }
   };
 
@@ -609,18 +567,15 @@ const ChatInterfaceComponent: React.FC<ChatInterfaceProps> = ({
     console.log('Applying message:', messageId);
 
     // Find the message with the generated data
-    const targetMessage = messages.find(msg => msg.id === messageId);
-    if (!targetMessage || !targetMessage.generatedData) {
+    const targetMessage = messages.find((msg) => msg.id === messageId);
+    if (
+      !targetMessage ||
+      targetMessage.type !== 'result' ||
+      !targetMessage.generatedData
+    ) {
       console.error('Message not found or no generated data:', messageId);
       return;
     }
-
-    // Update message to show loading state
-    setMessages((prev) =>
-      prev.map((msg) =>
-        msg.id === messageId ? { ...msg, isApplying: true } : msg
-      )
-    );
 
     try {
       // Send complete content data to be applied
@@ -638,12 +593,17 @@ const ChatInterfaceComponent: React.FC<ChatInterfaceProps> = ({
         // Add success message
         const successMessage: ChatMessage = {
           id: `success-${Date.now()}`,
-          type: 'system',
+          type: 'ai',
           sender: 'system',
           content: '✅ Content successfully applied to page!',
           timestamp: new Date(),
         };
-        setMessages((prev) => [...prev, successMessage]);
+        if (messageDispatch) {
+          messageDispatch({
+            type: 'added',
+            data: successMessage,
+          });
+        }
       } else {
         throw new Error(response.error || 'Failed to apply content');
       }
@@ -652,160 +612,27 @@ const ChatInterfaceComponent: React.FC<ChatInterfaceProps> = ({
       // Add error message
       const errorMessage: ChatMessage = {
         id: `error-${Date.now()}`,
-        type: 'system',
+        type: 'ai',
         sender: 'system',
         content: '❌ Failed to apply content. Please try again.',
         timestamp: new Date(),
       };
-      setMessages((prev) => [...prev, errorMessage]);
-    } finally {
-      // Reset loading state
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === messageId
-            ? { ...msg, isApplying: false }
-            : msg
-        )
-      );
-    }
-  };
-
-  const handleRegenerateMessage = async (messageId: string) => {
-    console.log('Regenerating message:', messageId);
-
-    // Find the message that needs regeneration
-    const targetMessage = messages.find(msg => msg.id === messageId);
-    if (!targetMessage) {
-      console.error('Message not found:', messageId);
-      return;
-    }
-
-    // Find the original user request by looking at the message history
-    // We need to find the user message that prompted this AI response
-    const messageIndex = messages.findIndex(msg => msg.id === messageId);
-    let userMessage = '';
-    
-    // Look backwards to find the most recent user message
-    for (let i = messageIndex - 1; i >= 0; i--) {
-      if (messages[i].sender === 'user') {
-        userMessage = messages[i].content;
-        break;
+      if (messageDispatch) {
+        messageDispatch({
+          type: 'added',
+          data: errorMessage,
+        });
       }
-    }
-
-    if (!userMessage) {
-      console.error('Could not find original user message for regeneration');
-      return;
-    }
-
-    // Add a system message indicating regeneration
-    const regenerateMessage: ChatMessage = {
-      id: `regenerate-${Date.now()}`,
-      type: 'system',
-      sender: 'system',
-      content: '🔄 重新生成中...',
-      timestamp: new Date(),
-    };
-    setMessages((prev) => [...prev, regenerateMessage]);
-
-    // Set loading state
-    setIsLoading(true);
-
-    try {
-      const aiConfig = await getAIConfig();
-      const aiService = new AIService(aiConfig);
-      
-      // Build conversation history from current messages (include all messages up to now)
-      const conversationHistory = messages
-        .filter(msg => msg.type !== 'collected')
-        .map(msg => ({
-          sender: msg.sender as 'user' | 'ai',
-          content: msg.content
-        }));
-
-      // Add the regenerate command as the new user message
-      conversationHistory.push({
-        sender: 'user',
-        content: userMessage
-      });
-
-      const chatMessages = buildChatMessages({
-        message: userMessage,
-        conversationHistory,
-        context: collectedContent,
-      });
-
-      const response = await aiService.chatCompletion(chatMessages);
-      
-      // Parse response as JSON and add as new AI message
-      let newAiMessage: ChatMessage;
-      try {
-        let cleanedContent = response.content.trim();
-        
-        if (cleanedContent.startsWith('```json')) {
-          cleanedContent = cleanedContent.replace(/^```json\s*/, '').replace(/```\s*$/, '');
-        } else if (cleanedContent.startsWith('```')) {
-          cleanedContent = cleanedContent.replace(/^```\s*/, '').replace(/```\s*$/, '');
-        }
-        
-        const parsedResponse = JSON.parse(cleanedContent);
-        
-        if (parsedResponse.title && parsedResponse.content) {
-          newAiMessage = {
-            id: `ai-${Date.now()}`,
-            type: 'ai',
-            sender: 'ai',
-            content: '',
-            timestamp: new Date(),
-            showApplyButton: true,
-            isApplying: false,
-            generatedData: {
-              title: parsedResponse.title,
-              content: parsedResponse.content
-            }
-          };
-        } else {
-          throw new Error('Invalid JSON structure: missing title or content');
-        }
-      } catch (parseError) {
-        console.error('Failed to parse AI response as JSON:', parseError);
-        console.log('Original response:', response.content);
-        
-        newAiMessage = {
-          id: `ai-${Date.now()}`,
-          type: 'ai',
-          sender: 'ai',
-          content: `AI返回格式错误，原始回复：\n${response.content}`,
-          timestamp: new Date(),
-          showApplyButton: false,
-          isApplying: false,
-        };
-      }
-
-      // Add the new AI message to the end of the conversation
-      setMessages((prev) => [...prev, newAiMessage]);
-    } catch (error) {
-      console.error('AI regeneration request failed:', error);
-      
-      // Add error message
-      const errorMessage: ChatMessage = {
-        id: `error-${Date.now()}`,
-        type: 'system',
-        sender: 'system',
-        content: `❌ 重新生成失败: ${error instanceof Error ? error.message : '未知错误'}`,
-        timestamp: new Date(),
-      };
-      
-      setMessages((prev) => [...prev, errorMessage]);
-    } finally {
-      setIsLoading(false);
     }
   };
 
   // Clear chat history (in-memory only)
   const handleClearChat = () => {
     if (window.confirm('确定要清除所有聊天记录吗？')) {
-      setMessages([]);
+      if (messageDispatch) {
+        messageDispatch({ type: 'clear' });
+      }
+      console.log('Chat history cleared');
     }
   };
 
@@ -823,7 +650,7 @@ const ChatInterfaceComponent: React.FC<ChatInterfaceProps> = ({
           </button>
         </div>
       )}
-      
+
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto p-4">
         {messages.length === 0 && (
@@ -847,7 +674,6 @@ const ChatInterfaceComponent: React.FC<ChatInterfaceProps> = ({
             key={message.id}
             message={message}
             onApply={handleApplyMessage}
-            onRegenerate={handleRegenerateMessage}
             onCommandClick={handleSendMessage}
           />
         ))}
