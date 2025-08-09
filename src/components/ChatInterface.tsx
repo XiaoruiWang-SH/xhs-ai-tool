@@ -123,7 +123,7 @@ const CollectedContentMessage: React.FC<{
             <div className="mb-3">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-sm">📸</span>
-                <span className="text-caption text-neutral-700">
+                <span className="text-caption font-semibold text-neutral-700">
                   图片 ({collectedData.images.length})
                 </span>
               </div>
@@ -145,7 +145,9 @@ const CollectedContentMessage: React.FC<{
             <div className="mb-3">
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-sm">📝</span>
-                <span className="text-caption text-neutral-700">标题:</span>
+                <span className="text-caption font-semibold text-neutral-700">
+                  标题:
+                </span>
               </div>
               <p className="text-sm text-neutral-900 ml-6">
                 {collectedData.title}
@@ -158,7 +160,9 @@ const CollectedContentMessage: React.FC<{
             <div className="mb-3">
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-sm">📄</span>
-                <span className="text-caption text-neutral-700">内容:</span>
+                <span className="text-caption font-semibold text-neutral-700">
+                  内容:
+                </span>
               </div>
               <p className="text-sm text-neutral-900 ml-6 line-clamp-3">
                 {collectedData.content.substring(0, 150)}
@@ -177,7 +181,7 @@ const CollectedContentMessage: React.FC<{
                 <button
                   key={cmd.id}
                   onClick={() => handleCommandClick(cmd.command)}
-                  className={`flex items-center gap-2 px-3 py-2 text-caption border rounded-lg transition-colors ${cmd.color}`}
+                  className={`flex items-center gap-2 px-3 py-1 text-caption border rounded-lg transition-colors ${cmd.color}`}
                 >
                   <span className="text-sm">{cmd.icon}</span>
                   <span className="text-xs font-medium">{cmd.label}</span>
@@ -383,10 +387,10 @@ const ChatInput: React.FC<{
 
   return (
     <div className="border-t-chrome-border bg-white p-4">
-      <div className="flex items-end gap-3">
+      <div className="flex justify-between items-center gap-1">
         {/* Attachment button */}
         <button
-          className="flex items-center justify-center w-8 h-8 text-neutral-500 hover:text-neutral-700 hover:bg-neutral-50 rounded transition-colors"
+          className="flex items-center justify-center w-10 h-10 text-neutral-500 hover:text-neutral-700 hover:bg-neutral-50 rounded transition-colors"
           title="Attach image"
         >
           📎
@@ -402,7 +406,7 @@ const ChatInput: React.FC<{
             placeholder="Type your message..."
             disabled={disabled}
             rows={1}
-            className="w-full text-sm border-neutral-300 rounded-lg px-3 py-2 resize-none focus:border-xhs-red focus:outline-none disabled:bg-neutral-50 disabled:text-neutral-400"
+            className="w-full text-sm border-[0.5px] border-neutral-300 rounded-lg px-3 py-2 resize-none focus:border-xhs-red focus:outline-none disabled:bg-neutral-50 disabled:text-neutral-400"
             style={{ minHeight: '36px', maxHeight: '120px' }}
           />
         </div>
@@ -442,7 +446,10 @@ const ChatInterfaceComponent = () => {
         const aiConfig = await getAIConfig();
         const aiService = new AIService(aiConfig);
 
-        const chatMessages = buildChatMessages(messages, aiService.getProvider());
+        const chatMessages = buildChatMessages(
+          messages,
+          aiService.getProvider()
+        );
 
         const response = await aiService.chatCompletion(chatMessages);
 
@@ -483,9 +490,11 @@ const ChatInterfaceComponent = () => {
             const errors = [];
             if (!parsedResponse.title) errors.push('缺少title字段');
             if (!parsedResponse.content) errors.push('缺少content字段');
-            if (parsedResponse.title && parsedResponse.title.length > 20) errors.push('标题超过20字符限制');
-            if (parsedResponse.content && parsedResponse.content.length > 1000) errors.push('内容超过1000字符限制');
-            
+            if (parsedResponse.title && parsedResponse.title.length > 20)
+              errors.push('标题超过20字符限制');
+            if (parsedResponse.content && parsedResponse.content.length > 1000)
+              errors.push('内容超过1000字符限制');
+
             throw new Error(`JSON Schema验证失败: ${errors.join(', ')}`);
           }
         } catch (parseError) {
@@ -533,7 +542,6 @@ const ChatInterfaceComponent = () => {
     },
     [messageDispatch]
   );
-
 
   useEffect(() => {
     scrollToBottom();
