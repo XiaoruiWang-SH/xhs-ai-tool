@@ -163,22 +163,46 @@ async function collectPageContent() {
 
 // 应用编辑后的内容回到页面
 function applyEditedContent(editedData: {
-  title: string;
-  content: string;
-  images: string[];
+  title?: string;
+  content?: string;
+  messageId?: string;
+  timestamp?: string;
 }) {
   try {
+    console.log('Content Script: 开始应用编辑后的内容:', editedData);
+    
+    const appliedFields: string[] = [];
+
     // 应用标题
     if (editedData.title) {
       const titleContainer = document.querySelector('.title-container');
       if (titleContainer) {
         const input = titleContainer.querySelector('input') as HTMLInputElement;
         if (input) {
+          console.log('Content Script: 应用标题:', editedData.title);
           input.value = editedData.title;
-          // 触发input事件以确保页面响应
-          input.dispatchEvent(new Event('input', { bubbles: true }));
-          input.dispatchEvent(new Event('change', { bubbles: true }));
+          
+          // 触发多种事件以确保页面响应
+          const events = ['input', 'change', 'keyup', 'blur'];
+          events.forEach(eventType => {
+            input.dispatchEvent(new Event(eventType, { bubbles: true }));
+          });
+          
+          // 如果是React组件，尝试触发React事件
+          const reactKey = Object.keys(input).find(key => 
+            key.startsWith('__reactInternalInstance') || 
+            key.startsWith('_reactInternalFiber')
+          );
+          if (reactKey) {
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+          }
+          
+          appliedFields.push('标题');
+        } else {
+          console.warn('Content Script: 未找到标题输入框');
         }
+      } else {
+        console.warn('Content Script: 未找到标题容器(.title-container)');
       }
     }
 
@@ -186,33 +210,68 @@ function applyEditedContent(editedData: {
     if (editedData.content) {
       const editorContainer = document.querySelector('.editor-container');
       if (editorContainer) {
-        const pElements = editorContainer.querySelectorAll('p');
-        const contentLines = editedData.content.split('\n');
+        console.log('Content Script: 应用内容:', editedData.content);
+        
+        // 获取现有的p元素
+        const existingPElements = editorContainer.querySelectorAll('p');
 
-        // 更新现有的p元素，如果内容行数更多则创建新的p元素
-        contentLines.forEach((line, index) => {
-          if (pElements[index]) {
-            pElements[index].textContent = line;
-          } else {
-            // 创建新的p元素
-            const newP = document.createElement('p');
-            newP.textContent = line;
-            editorContainer.appendChild(newP);
+        // 如果有现有的p元素，直接替换其内容
+        if (existingPElements.length > 0) {
+          // 使用第一个p元素来放置所有内容
+          const firstP = existingPElements[0] as HTMLParagraphElement;
+          firstP.textContent = editedData.content;
+          
+          // 移除其他多余的p元素
+          for (let i = 1; i < existingPElements.length; i++) {
+            existingPElements[i].remove();
           }
-        });
-
-        // 如果原来的p元素比新内容多，移除多余的p元素
-        for (let i = contentLines.length; i < pElements.length; i++) {
-          pElements[i].remove();
+        } else {
+          // 如果没有现有的p元素，创建一个新的
+          const newP = document.createElement('p');
+          newP.textContent = editedData.content;
+          
+          // 设置样式以匹配原有格式
+          newP.setAttribute('data-slate-node', 'element');
+          newP.setAttribute('data-slate-object', 'block');
+          
+          editorContainer.appendChild(newP);
         }
+
+        // 触发编辑器更新事件
+        const focusEvent = new Event('focus', { bubbles: true });
+        const inputEvent = new Event('input', { bubbles: true });
+        const changeEvent = new Event('change', { bubbles: true });
+        
+        editorContainer.dispatchEvent(focusEvent);
+        editorContainer.dispatchEvent(inputEvent);
+        editorContainer.dispatchEvent(changeEvent);
+
+        appliedFields.push('内容');
+      } else {
+        console.warn('Content Script: 未找到编辑器容器(.editor-container)');
       }
     }
 
-    console.log('内容应用完成');
-    return { success: true, message: '内容已成功应用到页面' };
+    if (appliedFields.length > 0) {
+      console.log(`Content Script: 应用完成 - ${appliedFields.join('、')}`);
+      return { 
+        success: true, 
+        message: `${appliedFields.join('、')}已成功应用到页面`,
+        appliedFields 
+      };
+    } else {
+      console.warn('Content Script: 没有应用任何内容');
+      return { 
+        success: false, 
+        error: '没有找到可应用的页面元素' 
+      };
+    }
   } catch (error) {
-    console.error('应用内容失败:', error);
-    return { success: false, error: (error as Error).message };
+    console.error('Content Script: 应用内容失败:', error);
+    return { 
+      success: false, 
+      error: (error as Error).message 
+    };
   }
 }
 
@@ -274,16 +333,39 @@ domWatcher.watch('.title.setting', (element) => {
 domWatcher.start();
 
 // 监听来自sidepanel的消息
-chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  console.log('Content Script: 收到消息:', { action: message.action, sender: sender.tab?.id });
+
   if (message.action === 'messageFromSidepanel') {
-    console.log('Content script收到来自sidepanel的消息:', message.data);
+    console.log('Content Script: 收到来自sidepanel的消息:', message.data);
     sendResponse({ success: true, message: '消息已在页面显示' });
     return true;
+    
   } else if (message.action === 'applyEditedContent') {
-    console.log('收到应用编辑内容的请求:', message.data);
+    console.log('Content Script: 收到应用编辑内容的请求:', message.data);
 
+    // 验证数据格式
+    if (!message.data) {
+      console.error('Content Script: 缺少数据');
+      sendResponse({ success: false, error: '缺少数据' });
+      return true;
+    }
+
+    if (!message.data.title && !message.data.content) {
+      console.error('Content Script: 缺少标题和内容');
+      sendResponse({ success: false, error: '缺少标题和内容数据' });
+      return true;
+    }
+
+    // 应用内容并返回结果
     const result = applyEditedContent(message.data);
+    console.log('Content Script: 应用结果:', result);
     sendResponse(result);
     return true;
+    
+  } else {
+    console.log('Content Script: 未知消息类型:', message.action);
+    sendResponse({ success: false, error: '未知消息类型' });
+    return false;
   }
 });

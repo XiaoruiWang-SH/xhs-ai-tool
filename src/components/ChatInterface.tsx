@@ -549,6 +549,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const handleApplyMessage = async (messageId: string) => {
     console.log('Applying message:', messageId);
 
+    // Find the message with the generated data
+    const targetMessage = messages.find(msg => msg.id === messageId);
+    if (!targetMessage || !targetMessage.generatedData) {
+      console.error('Message not found or no generated data:', messageId);
+      return;
+    }
+
     // Update message to show loading state
     setMessages((prev) =>
       prev.map((msg) =>
@@ -557,12 +564,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     );
 
     try {
-      // Send message to content script to apply content
+      // Send complete content data to be applied
       const response = await chrome.runtime.sendMessage({
         action: 'applyContentToPage',
         data: {
           messageId,
-          // You can extract the actual content from the message here
+          title: targetMessage.generatedData.title,
+          content: targetMessage.generatedData.content,
+          timestamp: new Date().toISOString(),
         },
       });
 

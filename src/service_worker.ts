@@ -265,7 +265,7 @@ async function handleApplyContentToPage(
   sendResponse: (response: any) => void
 ): Promise<void> {
   try {
-    console.log('应用内容到页面:', data);
+    console.log('Service Worker: 转发内容应用请求到content script:', data);
 
     // 获取当前活动标签页
     const [tab] = await chrome.tabs.query({
@@ -278,19 +278,32 @@ async function handleApplyContentToPage(
       return;
     }
 
-    // 发送消息到content script应用内容
+    // 确保数据包含必要的字段
+    if (!data.title && !data.content) {
+      sendResponse({ success: false, error: '缺少标题或内容数据' });
+      return;
+    }
+
+    // 发送消息到content script应用内容 (只转发，不存储)
     const response = await chrome.tabs.sendMessage(tab.id, {
       action: 'applyEditedContent',
-      data: data,
+      data: {
+        title: data.title || '',
+        content: data.content || '',
+        messageId: data.messageId,
+        timestamp: data.timestamp,
+      },
     });
 
+    console.log('Service Worker: Content script响应:', response);
+
     sendResponse({
-      success: true,
-      message: '内容已应用到页面',
-      response: response,
+      success: response?.success || false,
+      message: response?.message || '内容应用状态未知',
+      error: response?.error,
     });
   } catch (error) {
-    console.error('应用内容到页面失败:', error);
+    console.error('Service Worker: 应用内容到页面失败:', error);
     sendResponse({
       success: false,
       error: (error as Error).message,
