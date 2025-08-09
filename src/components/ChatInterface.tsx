@@ -440,6 +440,48 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Load chat history from Chrome storage on component mount
+  useEffect(() => {
+    const loadChatHistory = async () => {
+      try {
+        const result = await chrome.storage.local.get(['chatHistory']);
+        if (result.chatHistory && Array.isArray(result.chatHistory)) {
+          // Convert timestamp strings back to Date objects
+          const restoredMessages = result.chatHistory.map((msg: any) => ({
+            ...msg,
+            timestamp: new Date(msg.timestamp)
+          }));
+          setMessages(restoredMessages);
+        }
+      } catch (error) {
+        console.error('Failed to load chat history:', error);
+      }
+    };
+
+    loadChatHistory();
+  }, []);
+
+  // Save chat history to Chrome storage whenever messages change
+  useEffect(() => {
+    const saveChatHistory = async () => {
+      try {
+        // Convert Date objects to strings for storage
+        const messagesForStorage = messages.map(msg => ({
+          ...msg,
+          timestamp: msg.timestamp.toISOString()
+        }));
+        await chrome.storage.local.set({ chatHistory: messagesForStorage });
+      } catch (error) {
+        console.error('Failed to save chat history:', error);
+      }
+    };
+
+    // Only save if there are messages to avoid overwriting with empty array on initial load
+    if (messages.length > 0) {
+      saveChatHistory();
+    }
+  }, [messages]);
+
   // Auto-scroll to bottom
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -449,7 +491,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     scrollToBottom();
   }, [messages]);
 
-  // Handle collected content - auto-populate when received
+  // Handle collected content - add to current conversation when received
   useEffect(() => {
     if (collectedContent) {
       const collectedMessage: ChatMessage = {
@@ -461,7 +503,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         collectedData: collectedContent,
       };
 
-      setMessages([collectedMessage]);
+      // Add to existing messages instead of replacing them
+      setMessages((prev) => [...prev, collectedMessage]);
     }
   }, [collectedContent]);
 
@@ -665,6 +708,16 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       return;
     }
 
+    // Add a system message indicating regeneration
+    const regenerateMessage: ChatMessage = {
+      id: `regenerate-${Date.now()}`,
+      type: 'system',
+      sender: 'system',
+      content: '🔄 重新生成中...',
+      timestamp: new Date(),
+    };
+    setMessages((prev) => [...prev, regenerateMessage]);
+
     // Set loading state
     setIsLoading(true);
 
@@ -672,16 +725,15 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       const aiConfig = await getAIConfig();
       const aiService = new AIService(aiConfig);
       
-      // Build conversation history from current messages excluding the message being regenerated
+      // Build conversation history from current messages (include all messages up to now)
       const conversationHistory = messages
-        .slice(0, messageIndex)  // Only include messages before the one being regenerated
         .filter(msg => msg.type !== 'collected')
         .map(msg => ({
           sender: msg.sender as 'user' | 'ai',
           content: msg.content
         }));
 
-      // Add the user message that needs to be regenerated
+      // Add the regenerate command as the new user message
       conversationHistory.push({
         sender: 'user',
         content: userMessage
@@ -695,7 +747,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
       const response = await aiService.chatCompletion(chatMessages);
       
-      // Parse response as JSON
+      // Parse response as JSON and add as new AI message
       let newAiMessage: ChatMessage;
       try {
         let cleanedContent = response.content.trim();
@@ -740,12 +792,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         };
       }
 
-      // Replace the old message with the new generated message
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === messageId ? newAiMessage : msg
-        )
-      );
+      // Add the new AI message to the end of the conversation
+      setMessages((prev) => [...prev, newAiMessage]);
     } catch (error) {
       console.error('AI regeneration request failed:', error);
       
@@ -764,8 +812,38 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   };
 
+  // Clear chat history
+  const clearChatHistory = async () => {
+    try {
+      await chrome.storage.local.remove(['chatHistory']);
+      setMessages([]);
+    } catch (error) {
+      console.error('Failed to clear chat history:', error);
+    }
+  };
+
+  // Add a way to clear chat from UI (optional - can be exposed through settings)
+  const handleClearChat = () => {
+    if (window.confirm('确定要清除所有聊天记录吗？')) {
+      clearChatHistory();
+    }
+  };
+
   return (
     <div className="flex flex-col h-full bg-neutral-50">
+      {/* Header with clear button */}
+      {messages.length > 0 && (
+        <div className="flex justify-end p-2 border-b border-neutral-200">
+          <button
+            onClick={handleClearChat}
+            className="text-xs text-neutral-500 hover:text-neutral-700 px-2 py-1 rounded hover:bg-neutral-100 transition-colors"
+            title="清除聊天记录"
+          >
+            🗑️ Clear Chat
+          </button>
+        </div>
+      )}
+      
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto p-4">
         {messages.length === 0 && (
