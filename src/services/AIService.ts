@@ -50,8 +50,8 @@ export function validateContentResponse(
     response !== null &&
     typeof response.title === 'string' &&
     typeof response.content === 'string' &&
-    response.title.length <= 20 &&
-    response.content.length <= 1000
+    response.title.length <= 100 &&
+    response.content.length <= 10000
   );
 }
 

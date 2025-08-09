@@ -275,20 +275,141 @@ function applyEditedContent(editedData: {
   }
 }
 
+// 创建AI助手按钮的函数
+function createAIAssistantButton(): HTMLSpanElement {
+  const button = document.createElement('span');
+  
+  // 设置按钮样式，符合小红书风格
+  button.innerHTML = `
+    <div style="display: flex; align-items: center; gap: 4px;">
+      <span style="font-size: 14px;">✨</span>
+      <span style="font-size: 12px; font-weight: 500;">AI 一键生成</span>
+    </div>
+  `;
+  
+  // 应用样式
+  Object.assign(button.style, {
+    backgroundColor: '#ff4757',
+    color: 'white',
+    border: '#ff4757',
+    borderRadius: '16px',
+    padding: '3px 12px',
+    fontSize: '14px',
+    fontWeight: '500',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    boxShadow: '0 2px 4px rgba(255, 71, 87, 0.2)',
+    marginLeft: '8px',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: '70px',
+    height: '28px',
+    fontFamily:
+      '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    verticalAlign: 'middle',
+  });
+
+  // 悬停效果
+  button.addEventListener('mouseenter', () => {
+    Object.assign(button.style, {
+      backgroundColor: '#ff3742',
+      transform: 'translateY(-1px)',
+      boxShadow: '0 4px 8px rgba(255, 71, 87, 0.3)'
+    });
+  });
+
+  button.addEventListener('mouseleave', () => {
+    Object.assign(button.style, {
+      backgroundColor: '#ff4757',
+      transform: 'translateY(0)',
+      boxShadow: '0 2px 4px rgba(255, 71, 87, 0.2)'
+    });
+  });
+
+  return button;
+}
+
+// 更新按钮状态的函数
+function updateButtonState(button: HTMLSpanElement, state: 'idle' | 'loading' | 'success' | 'error') {
+  const states = {
+    idle: {
+      html: `<div style="display: flex; align-items: center; gap: 4px;"><span style="font-size: 14px;">✨</span><span style="font-size: 12px; font-weight: 500;">AI 生成</span></div>`,
+      backgroundColor: '#ff4757',
+      disabled: false
+    },
+    loading: {
+      html: `<div style="display: flex; align-items: center; gap: 4px;"><span style="font-size: 14px; animation: spin 1s linear infinite; display: inline-block;">⚡</span><span style="font-size: 12px; font-weight: 500;">生成中...</span></div>`,
+      backgroundColor: '#ffa502',
+      disabled: true
+    },
+    success: {
+      html: `<div style="display: flex; align-items: center; gap: 4px;"><span style="font-size: 14px;">✅</span><span style="font-size: 12px; font-weight: 500;">已生成</span></div>`,
+      backgroundColor: '#2ed573',
+      disabled: false
+    },
+    error: {
+      html: `<div style="display: flex; align-items: center; gap: 4px;"><span style="font-size: 14px;">❌</span><span style="font-size: 12px; font-weight: 500;">重试</span></div>`,
+      backgroundColor: '#ff4757',
+      disabled: false
+    }
+  };
+
+  const stateConfig = states[state];
+  button.innerHTML = stateConfig.html;
+  button.style.backgroundColor = stateConfig.backgroundColor;
+  
+  // 用样式来模拟disabled状态
+  if (stateConfig.disabled) {
+    button.style.opacity = '0.7';
+    button.style.cursor = 'not-allowed';
+    button.dataset.disabled = 'true';
+  } else {
+    button.style.opacity = '1';
+    button.style.cursor = 'pointer';
+    button.dataset.disabled = 'false';
+  }
+
+  // 添加旋转动画的CSS
+  if (state === 'loading') {
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    `;
+    if (!document.querySelector('#ai-button-animation')) {
+      style.id = 'ai-button-animation';
+      document.head.appendChild(style);
+    }
+  }
+}
+
 // 使用方法
 const domWatcher = new DOMWatcher();
 domWatcher.watch('.title.setting', (element) => {
   console.log('找到目标元素:', element);
-  // 在这里处理元素
+  
+  // 检查是否已经添加了AI按钮，避免重复添加
+  if (element.querySelector('.ai-assistant-button')) {
+    return;
+  }
 
-  const mydiv = document.createElement('span');
-  mydiv.textContent = '【AI】';
-  mydiv.style.color = 'red';
-  mydiv.addEventListener('click', async () => {
+  // 创建AI助手按钮
+  const aiButton = createAIAssistantButton();
+  aiButton.classList.add('ai-assistant-button');
+  
+  // 添加点击事件
+  aiButton.addEventListener('click', async () => {
+    // 检查是否处于禁用状态
+    if (aiButton.dataset.disabled === 'true') {
+      return;
+    }
+
     try {
-      // 显示加载提示
-      mydiv.textContent = '【收集中...】';
-      mydiv.style.color = 'orange';
+      // 更新按钮状态为加载中
+      updateButtonState(aiButton, 'loading');
       
       // 收集页面内容
       const collectedData = await collectPageContent();
@@ -305,28 +426,29 @@ domWatcher.watch('.title.setting', (element) => {
       
       console.log('内容收集完成:', response);
       
-      // 恢复按钮状态
-      mydiv.textContent = '【AI】';
-      mydiv.style.color = 'green';
+      // 更新按钮状态为成功
+      updateButtonState(aiButton, 'success');
       
-      // 2秒后恢复原色
+      // 2秒后恢复原状态
       setTimeout(() => {
-        mydiv.style.color = 'red';
+        updateButtonState(aiButton, 'idle');
       }, 2000);
       
     } catch (error) {
       console.error('内容收集失败:', error);
-      mydiv.textContent = '【失败】';
-      mydiv.style.color = 'red';
       
-      // 2秒后恢复
+      // 更新按钮状态为错误
+      updateButtonState(aiButton, 'error');
+      
+      // 3秒后恢复原状态
       setTimeout(() => {
-        mydiv.textContent = '【AI】';
-        mydiv.style.color = 'red';
-      }, 2000);
+        updateButtonState(aiButton, 'idle');
+      }, 3000);
     }
   });
-  element.appendChild(mydiv);
+
+  // 将按钮添加到目标元素
+  element.appendChild(aiButton);
 
   domWatcher.stop();
 });
