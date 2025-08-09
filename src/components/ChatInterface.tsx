@@ -50,6 +50,23 @@ const ApplyButton: React.FC<{
   );
 };
 
+// Regenerate Button Component
+const RegenerateButton: React.FC<{
+  onClick: () => void;
+  isLoading?: boolean;
+  className?: string;
+}> = ({ onClick, isLoading = false, className = '' }) => {
+  return (
+    <button
+      onClick={onClick}
+      disabled={isLoading}
+      className={`bg-neutral-600 hover:bg-neutral-700 text-white px-4 py-2 rounded-md text-caption font-medium border-0 disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200 hover:transform hover:-translate-y-0.5 ${className}`}
+    >
+      {isLoading ? '重新生成中...' : '🔄 Regenerate'}
+    </button>
+  );
+};
+
 // Collected Content Message Component
 const CollectedContentMessage: React.FC<{
   collectedData: CollectedContent;
@@ -210,8 +227,9 @@ const CollectedContentMessage: React.FC<{
 const MessageBubble: React.FC<{
   message: ChatMessage;
   onApply?: (messageId: string) => void;
+  onRegenerate?: (messageId: string) => void;
   onCommandClick?: (command: string) => void;
-}> = ({ message, onApply, onCommandClick }) => {
+}> = ({ message, onApply, onRegenerate, onCommandClick }) => {
   // Handle collected content type
   if (message.type === 'collected' && message.collectedData) {
     return (
@@ -271,11 +289,15 @@ const MessageBubble: React.FC<{
               <div className="text-sm text-neutral-900 whitespace-pre-wrap">{message.generatedData.content}</div>
             </div>
 
-            {/* Apply button */}
+            {/* Action buttons */}
             {message.showApplyButton && (
-              <div className="mt-3">
+              <div className="mt-3 flex gap-2">
                 <ApplyButton
                   onClick={() => onApply?.(message.id)}
+                  isLoading={message.isApplying}
+                />
+                <RegenerateButton
+                  onClick={() => onRegenerate?.(message.id)}
                   isLoading={message.isApplying}
                 />
               </div>
@@ -317,11 +339,15 @@ const MessageBubble: React.FC<{
             {message.content}
           </div>
 
-          {/* Apply button for AI messages */}
+          {/* Action buttons for AI messages */}
           {!isUser && message.showApplyButton && (
-            <div className="mt-3">
+            <div className="mt-3 flex gap-2">
               <ApplyButton
                 onClick={() => onApply?.(message.id)}
+                isLoading={message.isApplying}
+              />
+              <RegenerateButton
+                onClick={() => onRegenerate?.(message.id)}
                 isLoading={message.isApplying}
               />
             </div>
@@ -611,6 +637,133 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   };
 
+  const handleRegenerateMessage = async (messageId: string) => {
+    console.log('Regenerating message:', messageId);
+
+    // Find the message that needs regeneration
+    const targetMessage = messages.find(msg => msg.id === messageId);
+    if (!targetMessage) {
+      console.error('Message not found:', messageId);
+      return;
+    }
+
+    // Find the original user request by looking at the message history
+    // We need to find the user message that prompted this AI response
+    const messageIndex = messages.findIndex(msg => msg.id === messageId);
+    let userMessage = '';
+    
+    // Look backwards to find the most recent user message
+    for (let i = messageIndex - 1; i >= 0; i--) {
+      if (messages[i].sender === 'user') {
+        userMessage = messages[i].content;
+        break;
+      }
+    }
+
+    if (!userMessage) {
+      console.error('Could not find original user message for regeneration');
+      return;
+    }
+
+    // Set loading state
+    setIsLoading(true);
+
+    try {
+      const aiConfig = await getAIConfig();
+      const aiService = new AIService(aiConfig);
+      
+      // Build conversation history from current messages excluding the message being regenerated
+      const conversationHistory = messages
+        .slice(0, messageIndex)  // Only include messages before the one being regenerated
+        .filter(msg => msg.type !== 'collected')
+        .map(msg => ({
+          sender: msg.sender as 'user' | 'ai',
+          content: msg.content
+        }));
+
+      // Add the user message that needs to be regenerated
+      conversationHistory.push({
+        sender: 'user',
+        content: userMessage
+      });
+
+      const chatMessages = buildChatMessages({
+        message: userMessage,
+        conversationHistory,
+        context: collectedContent,
+      });
+
+      const response = await aiService.chatCompletion(chatMessages);
+      
+      // Parse response as JSON
+      let newAiMessage: ChatMessage;
+      try {
+        let cleanedContent = response.content.trim();
+        
+        if (cleanedContent.startsWith('```json')) {
+          cleanedContent = cleanedContent.replace(/^```json\s*/, '').replace(/```\s*$/, '');
+        } else if (cleanedContent.startsWith('```')) {
+          cleanedContent = cleanedContent.replace(/^```\s*/, '').replace(/```\s*$/, '');
+        }
+        
+        const parsedResponse = JSON.parse(cleanedContent);
+        
+        if (parsedResponse.title && parsedResponse.content) {
+          newAiMessage = {
+            id: `ai-${Date.now()}`,
+            type: 'ai',
+            sender: 'ai',
+            content: '',
+            timestamp: new Date(),
+            showApplyButton: true,
+            isApplying: false,
+            generatedData: {
+              title: parsedResponse.title,
+              content: parsedResponse.content
+            }
+          };
+        } else {
+          throw new Error('Invalid JSON structure: missing title or content');
+        }
+      } catch (parseError) {
+        console.error('Failed to parse AI response as JSON:', parseError);
+        console.log('Original response:', response.content);
+        
+        newAiMessage = {
+          id: `ai-${Date.now()}`,
+          type: 'ai',
+          sender: 'ai',
+          content: `AI返回格式错误，原始回复：\n${response.content}`,
+          timestamp: new Date(),
+          showApplyButton: false,
+          isApplying: false,
+        };
+      }
+
+      // Replace the old message with the new generated message
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === messageId ? newAiMessage : msg
+        )
+      );
+    } catch (error) {
+      console.error('AI regeneration request failed:', error);
+      
+      // Add error message
+      const errorMessage: ChatMessage = {
+        id: `error-${Date.now()}`,
+        type: 'system',
+        sender: 'system',
+        content: `❌ 重新生成失败: ${error instanceof Error ? error.message : '未知错误'}`,
+        timestamp: new Date(),
+      };
+      
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full bg-neutral-50">
       {/* Messages area */}
@@ -636,6 +789,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             key={message.id}
             message={message}
             onApply={handleApplyMessage}
+            onRegenerate={handleRegenerateMessage}
             onCommandClick={handleSendMessage}
           />
         ))}
