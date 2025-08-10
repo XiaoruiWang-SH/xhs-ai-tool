@@ -181,7 +181,7 @@ const CollectedContentMessage: React.FC<{
                 <button
                   key={cmd.id}
                   onClick={() => handleCommandClick(cmd.command)}
-                  className={`flex items-center gap-2 px-3 py-1 text-caption border rounded-lg transition-colors ${cmd.color}`}
+                  className={`flex items-center gap-2 px-3 py-1 text-caption border-[0.5px] rounded-lg transition-colors ${cmd.color}`}
                 >
                   <span className="text-sm">{cmd.icon}</span>
                   <span className="text-xs font-medium">{cmd.label}</span>
@@ -672,49 +672,10 @@ const ChatInterfaceComponent = () => {
     }
   };
 
-  // Clear chat history (in-memory only)
-  const handleClearChat = () => {
-    if (window.confirm('确定要清除所有聊天记录吗？')) {
-      if (messageDispatch) {
-        messageDispatch({ type: 'clear' });
-      }
-      console.log('Chat history cleared');
-    }
-  };
-
   return (
     <div className="flex flex-col h-full bg-neutral-50">
-      {/* Header with clear button */}
-      {messages.length > 0 && (
-        <div className="flex justify-end p-2 border-b border-neutral-200">
-          <button
-            onClick={handleClearChat}
-            className="text-xs text-neutral-500 hover:text-neutral-700 px-2 py-1 rounded hover:bg-neutral-100 transition-colors"
-            title="清除聊天记录"
-          >
-            🗑️ Clear Chat
-          </button>
-        </div>
-      )}
-
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto p-4">
-        {messages.length === 0 && (
-          <div className="text-center py-8">
-            <div className="text-4xl mb-4">💬</div>
-            <h3 className="text-title text-neutral-900 mb-2">
-              Welcome to Xiaohongshu AI
-            </h3>
-            <p className="text-sm text-neutral-700 mb-4">
-              I'm here to help create engaging content for your posts.
-            </p>
-            <p className="text-caption text-neutral-500">
-              Click the [AI] button on any Xiaohongshu page to collect content,
-              or start a conversation here.
-            </p>
-          </div>
-        )}
-
         {messages.map((message) => (
           <MessageBubble
             key={message.id}
