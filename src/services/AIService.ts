@@ -5,7 +5,7 @@ import { type ChatMessage } from './messageTypes';
 // API message format for OpenAI/Claude
 export interface APIMessage {
   role: 'system' | 'user' | 'assistant';
-  content: string;
+  content: any[];
 }
 
 export interface AIConfig {
@@ -332,18 +332,52 @@ export function buildChatMessages(
   userfulMessages.forEach((msg) => {
     const role: 'user' | 'assistant' =
       msg.sender === 'user' ? 'user' : 'assistant';
-    let content = '';
+    const content: any[] = [];
     if (msg.type === 'collected' && msg.collectedData) {
-      content = `标题：${msg.collectedData.title}\n内容：${msg.collectedData.content}`;
+      const imgs = msg.collectedData.images || [];
+      if (imgs.length > 0) {
+        const imageObjects = imgs.map((img) => ({
+          type: 'image',
+          source: {
+            type: 'base64',
+            media_type: 'image/png',
+            data: img,
+          },
+        }));
+        content.push(...imageObjects);
+      }
+      const contentObjTitle = {
+        type: 'text',
+        text: `小红书文案标题: ${msg.collectedData.title}`,
+      };
+      content.push(contentObjTitle);
+      const contentObjContent = {
+        type: 'text',
+        text: `小红书文案内容: ${msg.collectedData.content}`,
+      };
+      content.push(contentObjContent);
     } else if (msg.type === 'result' && msg.generatedData) {
-      content = `标题：${msg.generatedData.title}\n内容：${msg.generatedData.content}`;
+      const aiContentObjTitle = {
+        type: 'text',
+        text: `AI生成的小红书文案标题: ${msg.generatedData.title}`,
+      };
+      content.push(aiContentObjTitle);
+      const aiContentObjContent = {
+        type: 'text',
+        text: `AI生成的小红书文案内容: ${msg.generatedData.content}`,
+      };
+      content.push(aiContentObjContent);
     } else {
-      content = msg.content || '';
+      const contentObj = {
+        type: 'text',
+        text: msg.content || '',
+      };
+      content.push(contentObj);
     }
 
     messages.push({
       role,
-      content,
+      content: content,
     });
   });
 
