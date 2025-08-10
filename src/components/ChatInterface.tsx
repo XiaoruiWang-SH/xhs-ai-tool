@@ -6,7 +6,7 @@ import {
   validateContentResponse,
 } from '../services/AIService';
 import { useMessages, useMessagesDispatch } from '../services/messageHooks';
-import type { ChatMessage, CollectedContent } from '../services/messageTypes';
+import type { ChatMessage, CollectedContent, UserMessage } from '../services/messageTypes';
 
 // Apply Button Component
 const ApplyButton: React.FC<{
@@ -366,8 +366,24 @@ const MessageBubble: React.FC<{
             isUser ? 'bg-blue-500 text-white' : 'bg-white border-neutral-300'
           }`}
         >
+          {/* 显示用户上传的图片 */}
+          {isUser && message.userMessage?.images && message.userMessage.images.length > 0 && (
+            <div className="mb-3">
+              <div className="flex flex-wrap gap-2">
+                {message.userMessage.images.map((image, index) => (
+                  <img
+                    key={index}
+                    src={image}
+                    alt={`User upload ${index + 1}`}
+                    className="w-16 h-16 object-cover rounded border border-white/20"
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+          
           <div className="text-sm whitespace-pre-wrap break-words">
-            {message.content}
+            {isUser ? message.userMessage?.content : message.content}
           </div>
 
           {/* Action buttons for AI messages */}
@@ -391,16 +407,57 @@ const MessageBubble: React.FC<{
 
 // Chat Input Component
 const ChatInput: React.FC<{
-  onSendMessage: (message: string) => void;
+  onSendMessage: (userMessage: UserMessage) => void;
   disabled?: boolean;
 }> = ({ onSendMessage, disabled = false }) => {
   const [message, setMessage] = useState('');
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 图片转换为Base64
+  const convertImageToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // 处理图片上传
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    try {
+      const imagePromises = Array.from(files).map(convertImageToBase64);
+      const newImages = await Promise.all(imagePromises);
+      setUploadedImages(prev => [...prev, ...newImages]);
+    } catch (error) {
+      console.error('图片上传失败:', error);
+    }
+    
+    // 清空文件输入
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // 移除图片
+  const removeImage = (index: number) => {
+    setUploadedImages(prev => prev.filter((_, i) => i !== index));
+  };
 
   const handleSend = () => {
     if (message.trim() && !disabled) {
-      onSendMessage(message.trim());
+      const userMessage: UserMessage = {
+        content: message.trim(),
+        images: uploadedImages.length > 0 ? uploadedImages : undefined
+      };
+      onSendMessage(userMessage);
       setMessage('');
+      setUploadedImages([]);
       // Reset textarea height
       if (textareaRef.current) {
         textareaRef.current.style.height = 'auto';
@@ -425,13 +482,49 @@ const ChatInput: React.FC<{
 
   return (
     <div className="border-t-chrome-border bg-white p-4">
+      {/* 上传的图片预览区域 */}
+      {uploadedImages.length > 0 && (
+        <div className="mb-3">
+          <div className="flex flex-wrap gap-2">
+            {uploadedImages.map((image, index) => (
+              <div key={index} className="relative">
+                <img
+                  src={image}
+                  alt={`Upload ${index + 1}`}
+                  className="w-12 h-12 object-cover rounded border border-neutral-200"
+                />
+                <button
+                  onClick={() => removeImage(index)}
+                  className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs hover:bg-red-600 flex items-center justify-center"
+                  title="Remove image"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      
       <div className="flex justify-between items-center gap-1">
-        {/* Attachment button */}
+        {/* 隐藏的文件输入 */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={handleImageUpload}
+        />
+        
+        {/* 图片上传按钮 */}
         <button
-          className="flex items-center justify-center w-10 h-10 text-neutral-500 hover:text-neutral-700 hover:bg-neutral-50 rounded transition-colors"
-          title="Attach image"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={disabled}
+          className="flex items-center justify-center w-10 h-10 text-neutral-500 hover:text-neutral-700 hover:bg-neutral-50 rounded transition-colors disabled:opacity-50"
+          title="Upload images"
         >
-          📎
+          📷
         </button>
 
         {/* Message input */}
@@ -452,7 +545,7 @@ const ChatInput: React.FC<{
         {/* Send button */}
         <button
           onClick={handleSend}
-          disabled={!message.trim() || disabled}
+          disabled={(!message.trim() && uploadedImages.length === 0) || disabled}
           className="flex items-center justify-center w-8 h-8 text-white bg-xhs-red rounded hover:bg-xhs-red-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           title="Send message"
         >
@@ -585,7 +678,7 @@ const ChatInterfaceComponent = () => {
     scrollToBottom();
   }, [messages]);
 
-  const handleSendMessage = async (messageContent: string) => {
+  const handleSendMessage = async (userMessageData: UserMessage) => {
     if (isLoading) return;
 
     // Add user message
@@ -593,8 +686,8 @@ const ChatInterfaceComponent = () => {
       id: `user-${Date.now()}`,
       type: 'user',
       sender: 'user',
-      content: messageContent,
       timestamp: new Date(),
+      userMessage: userMessageData,
     };
 
     if (messageDispatch) {
@@ -681,7 +774,7 @@ const ChatInterfaceComponent = () => {
             key={message.id}
             message={message}
             onApply={handleApplyMessage}
-            onCommandClick={handleSendMessage}
+            onCommandClick={(command: string) => handleSendMessage({ content: command })}
           />
         ))}
 

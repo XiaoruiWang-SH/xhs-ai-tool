@@ -13,6 +13,8 @@ export interface ChatMessage {
   collectedData?: CollectedContent;
   // For AI generated content
   generatedData?: AiGeneratedContent;
+  // For user messages with images
+  userMessage?: UserMessage;
 }
 
 export interface CollectedContent {
@@ -24,6 +26,11 @@ export interface CollectedContent {
 export interface AiGeneratedContent {
   title: string;
   content: string;
+}
+
+export interface UserMessage {
+  content: string;
+  images?: string[];
 }
 
 // Define action types

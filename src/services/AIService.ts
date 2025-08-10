@@ -342,7 +342,40 @@ export function buildChatMessages(
     const role: 'user' | 'assistant' =
       msg.sender === 'user' ? 'user' : 'assistant';
     const content: any[] = [];
-    if (msg.type === 'collected' && msg.collectedData) {
+    
+    // Handle user messages with uploaded images
+    if (msg.sender === 'user' && msg.userMessage) {
+      // Add user uploaded images
+      if (msg.userMessage.images && msg.userMessage.images.length > 0) {
+        const imageObjects = msg.userMessage.images.map((img) => {
+          // 移除 data URL 前缀，只保留 base64 编码部分
+          let base64Data = img;
+          if (img.startsWith('data:')) {
+            const commaIndex = img.indexOf(',');
+            if (commaIndex !== -1) {
+              base64Data = img.substring(commaIndex + 1);
+            }
+          }
+          
+          return {
+            type: 'image',
+            source: {
+              type: 'base64',
+              media_type: 'image/jpeg',
+              data: base64Data,
+            },
+          };
+        });
+        content.push(...imageObjects);
+      }
+      
+      // Add user text content
+      const textContent = {
+        type: 'text',
+        text: msg.userMessage.content,
+      };
+      content.push(textContent);
+    } else if (msg.type === 'collected' && msg.collectedData) {
       const imgs = msg.collectedData.images || [];
       if (imgs.length > 0) {
         const imageObjects = imgs.map((img) => {
