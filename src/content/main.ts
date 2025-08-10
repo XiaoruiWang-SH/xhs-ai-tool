@@ -6,6 +6,7 @@ class DOMWatcher {
 
   constructor() {
     this.observer = new MutationObserver((mutations) => {
+      console.log('DOMWatcher: 监听到DOM变化', mutations);
       mutations.forEach((mutation) => {
         if (mutation.type === 'childList') {
           mutation.addedNodes.forEach((node) => {
@@ -361,8 +362,6 @@ domWatcher.watch('.title.setting', (element) => {
 
   // 将按钮添加到目标元素
   element.appendChild(aiButton);
-
-  domWatcher.stop();
 });
 domWatcher.start();
 
