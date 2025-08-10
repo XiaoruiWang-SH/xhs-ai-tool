@@ -325,9 +325,18 @@ export function buildChatMessages(
   const messages: APIMessage[] = [];
 
   // 添加完整的对话历史，只区分user和assistant
-  const userfulMessages = data.filter(
-    (msg) => msg.sender === 'user' || msg.sender === 'assistant'
-  );
+  const totalNumMsgs = data.length;
+  const userfulMessages = data.filter((msg, index) => {
+    if (index === 0) return false;
+    if (
+      totalNumMsgs >= 5 &&
+      index !== 1 &&
+      index !== totalNumMsgs - 1 &&
+      index !== totalNumMsgs - 2
+    )
+      return false;
+    return msg.sender === 'user' || msg.sender === 'assistant';
+  });
 
   userfulMessages.forEach((msg) => {
     const role: 'user' | 'assistant' =
@@ -345,7 +354,7 @@ export function buildChatMessages(
               base64Data = img.substring(commaIndex + 1);
             }
           }
-          
+
           return {
             type: 'image',
             source: {
