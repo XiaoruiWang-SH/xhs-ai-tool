@@ -1,60 +1,32 @@
 import React from 'react';
+import redNoteIcon from '../assets/redNote_icon.svg';
+import settingIcon from '../assets/setting_icon.svg';
 
 interface HeaderProps {
-  connectionStatus: 'connected' | 'connecting' | 'error';
   onSettingsClick?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ 
-  connectionStatus, 
-  onSettingsClick 
+export const Header: React.FC<HeaderProps> = ({
+  onSettingsClick,
 }) => {
-  const getStatusIndicator = () => {
-    switch (connectionStatus) {
-      case 'connected':
-        return '🟢';
-      case 'connecting':
-        return '🟡';
-      case 'error':
-        return '🔴';
-      default:
-        return '⚪';
-    }
-  };
-
-  const getStatusText = () => {
-    switch (connectionStatus) {
-      case 'connected':
-        return 'Connected';
-      case 'connecting':
-        return 'Connecting...';
-      case 'error':
-        return 'Connection Error';
-      default:
-        return 'Disconnected';
-    }
-  };
 
   return (
-    <div className="flex items-center justify-between p-3 bg-white border-b-chrome-border">
-      <div className="flex items-center gap-2">
-        <div className="text-xhs-red text-lg">🔴</div>
-        <h1 className="text-title text-neutral-900 m-0">小红书 AI</h1>
-        <div className="flex items-center gap-1 ml-2">
-          <span className="text-xs" title={getStatusText()}>
-            {getStatusIndicator()}
-          </span>
-        </div>
+    <div className="flex items-center justify-between px-3 bg-white border-b-[0.5px] border-b-gray-300">
+      <div className="flex justify-between items-center gap-1.5">
+        <img className="w-12 h-12" src={redNoteIcon} alt="red note icon" />
+        <div className='pt-[7px] text-gray-700'>AI小助手</div>
       </div>
-      
+
       {onSettingsClick && (
         <button
           onClick={onSettingsClick}
           className="bg-transparent border-neutral-300 rounded-full w-7 h-7 cursor-pointer flex items-center justify-center hover:bg-neutral-50 transition-colors"
-          title="Settings"
+          title="设置"
           aria-label="Open settings"
         >
-          <span className="text-xs">⚙️</span>
+          {/* <span className="text-xs">⚙️</span> */}
+          <img className="w-4 h-4" src={settingIcon} alt="settings icon" />
+
         </button>
       )}
     </div>

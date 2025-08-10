@@ -16,15 +16,14 @@ interface Tab {
   icon: string;
 }
 
-const tabs: Tab[] = [
-  { type: 'chat', label: 'Chat', icon: '💬' },
-  { type: 'settings', label: 'Settings', icon: '⚙️' },
-];
+// const tabs: Tab[] = [
+//   { type: 'chat', label: 'Chat', icon: '💬' },
+//   { type: 'settings', label: 'Settings', icon: '⚙️' },
+// ];
 
 export const Layout: React.FC<LayoutProps> = ({
   children,
   defaultTab = 'chat',
-  connectionStatus = 'connected',
   onTabChange,
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>(defaultTab);
@@ -38,12 +37,11 @@ export const Layout: React.FC<LayoutProps> = ({
     <div className="flex flex-col h-screen max-w-sm mx-auto bg-chrome-bg">
       {/* Header */}
       <Header 
-        connectionStatus={connectionStatus}
         onSettingsClick={() => handleTabChange('settings')}
       />
       
       {/* Tab Navigation */}
-      <div className="flex border-b-chrome-border bg-white">
+      {/* <div className="flex border-b-chrome-border bg-white">
         {tabs.map((tab) => (
           <button
             key={tab.type}
@@ -61,7 +59,7 @@ export const Layout: React.FC<LayoutProps> = ({
             </span>
           </button>
         ))}
-      </div>
+      </div> */}
 
       {/* Content Area */}
       <div className="flex-1 overflow-hidden">
