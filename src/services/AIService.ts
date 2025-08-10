@@ -320,7 +320,7 @@ export class AIService {
 // 构建聊天消息的辅助函数 - 根据不同AI提供商调整系统提示词
 export function buildChatMessages(
   data: ChatMessage[],
-  provider: string = 'openai'
+  _provider: string = 'openai'
 ): APIMessage[] {
   const messages: APIMessage[] = [];
 
