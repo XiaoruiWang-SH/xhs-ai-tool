@@ -1,4 +1,5 @@
 import aiAuto_icon from '../assets/aiAuto_icon.svg';
+import { convertImageElementToBase64 } from '../utils/imageUtils';
 
 class DOMWatcher {
   private observer: MutationObserver | null = null;
@@ -64,40 +65,6 @@ class DOMWatcher {
   }
 }
 
-// 将图片转换为base64的辅助函数
-async function convertImageToBase64(
-  imgElement: HTMLImageElement
-): Promise<string> {
-  return new Promise((resolve, reject) => {
-    try {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-
-      if (!ctx) {
-        reject(new Error('Canvas context not available'));
-        return;
-      }
-
-      // 确保图片已加载
-      if (imgElement.complete) {
-        canvas.width = imgElement.naturalWidth || imgElement.width;
-        canvas.height = imgElement.naturalHeight || imgElement.height;
-        ctx.drawImage(imgElement, 0, 0);
-        resolve(canvas.toDataURL('image/jpeg', 0.8));
-      } else {
-        imgElement.onload = () => {
-          canvas.width = imgElement.naturalWidth || imgElement.width;
-          canvas.height = imgElement.naturalHeight || imgElement.height;
-          ctx.drawImage(imgElement, 0, 0);
-          resolve(canvas.toDataURL('image/jpeg', 0.8));
-        };
-        imgElement.onerror = () => reject(new Error('Image load failed'));
-      }
-    } catch (error) {
-      reject(error);
-    }
-  });
-}
 
 // 收集页面内容的函数
 async function collectPageContent() {
@@ -119,7 +86,7 @@ async function collectPageContent() {
       if (imgElement.src) {
         if (imgElement.src.startsWith('blob:')) {
           // 对于blob URL，转换为base64
-          imagePromises.push(convertImageToBase64(imgElement));
+          imagePromises.push(convertImageElementToBase64(imgElement));
         } else {
           // 对于普通URL，直接使用
           //   imagePromises.push(Promise.resolve(imgElement.src));

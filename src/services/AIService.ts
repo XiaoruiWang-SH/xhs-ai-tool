@@ -329,10 +329,11 @@ export function buildChatMessages(
   const userfulMessages = data.filter((msg, index) => {
     if (index === 0) return false;
     if (
-      totalNumMsgs >= 5 &&
+      totalNumMsgs > 6 &&
       index !== 1 &&
       index !== totalNumMsgs - 1 &&
-      index !== totalNumMsgs - 2
+      index !== totalNumMsgs - 2 &&
+      index !== totalNumMsgs - 3
     )
       return false;
     return msg.sender === 'user' || msg.sender === 'assistant';
@@ -342,7 +343,7 @@ export function buildChatMessages(
     const role: 'user' | 'assistant' =
       msg.sender === 'user' ? 'user' : 'assistant';
     const content: any[] = [];
-    
+
     // Handle user messages with uploaded images
     if (msg.sender === 'user' && msg.userMessage) {
       // Add user uploaded images
@@ -356,7 +357,7 @@ export function buildChatMessages(
               base64Data = img.substring(commaIndex + 1);
             }
           }
-          
+
           return {
             type: 'image',
             source: {
@@ -368,7 +369,7 @@ export function buildChatMessages(
         });
         content.push(...imageObjects);
       }
-      
+
       // Add user text content
       const textContent = {
         type: 'text',

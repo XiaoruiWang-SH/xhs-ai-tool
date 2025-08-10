@@ -7,6 +7,7 @@ import {
 } from '../services/AIService';
 import { useMessages, useMessagesDispatch } from '../services/messageHooks';
 import type { ChatMessage, CollectedContent, UserMessage } from '../services/messageTypes';
+import { batchCompressImages } from '../utils/imageUtils';
 
 // Apply Button Component
 const ApplyButton: React.FC<{
@@ -127,7 +128,7 @@ const CollectedContentMessage: React.FC<{
                   图片 ({collectedData.images.length})
                 </span>
               </div>
-              <div className="flex flex-wrap justify-start items-center gap-2 ">
+              <div className="flex flex-wrap justify-start items-center gap-2">
                 {collectedData.images.map((img, index) => (
                   <img
                     key={index}
@@ -367,21 +368,23 @@ const MessageBubble: React.FC<{
           }`}
         >
           {/* 显示用户上传的图片 */}
-          {isUser && message.userMessage?.images && message.userMessage.images.length > 0 && (
-            <div className="mb-3">
-              <div className="flex flex-wrap gap-2">
-                {message.userMessage.images.map((image, index) => (
-                  <img
-                    key={index}
-                    src={image}
-                    alt={`User upload ${index + 1}`}
-                    className="w-16 h-16 object-cover rounded border border-white/20"
-                  />
-                ))}
+          {isUser &&
+            message.userMessage?.images &&
+            message.userMessage.images.length > 0 && (
+              <div className="mb-3">
+                <div className="flex flex-wrap gap-1.5">
+                  {message.userMessage.images.map((image, index) => (
+                    <img
+                      key={index}
+                      src={image}
+                      alt={`User upload ${index + 1}`}
+                      className="w-[38px] h-[38px] object-cover rounded border-[0.5px] border-xhs-red-light"
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
-          
+            )}
+
           <div className="text-sm whitespace-pre-wrap break-words">
             {isUser ? message.userMessage?.content : message.content}
           </div>
@@ -415,24 +418,13 @@ const ChatInput: React.FC<{
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // 图片转换为Base64
-  const convertImageToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  };
-
   // 处理图片上传
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
 
     try {
-      const imagePromises = Array.from(files).map(convertImageToBase64);
-      const newImages = await Promise.all(imagePromises);
+      const newImages = await batchCompressImages(Array.from(files));
       setUploadedImages(prev => [...prev, ...newImages]);
     } catch (error) {
       console.error('图片上传失败:', error);
@@ -491,7 +483,7 @@ const ChatInput: React.FC<{
                 <img
                   src={image}
                   alt={`Upload ${index + 1}`}
-                  className="w-12 h-12 object-cover rounded border border-neutral-200"
+                  className="w-10 h-10 object-cover rounded border border-neutral-200"
                 />
                 <button
                   onClick={() => removeImage(index)}
