@@ -497,7 +497,7 @@ const ChatInput: React.FC<{
           </div>
         </div>
       )}
-      
+
       <div className="flex justify-between items-center gap-1">
         {/* 隐藏的文件输入 */}
         <input
@@ -513,14 +513,14 @@ const ChatInput: React.FC<{
         <button
           onClick={() => fileInputRef.current?.click()}
           disabled={disabled}
-          className="flex items-center justify-center w-10 h-10 text-neutral-500 hover:text-neutral-700 hover:bg-neutral-50 rounded transition-colors disabled:opacity-50"
+          className="flex items-center justify-center w-8 h-8 text-base text-neutral-500 hover:text-neutral-700 hover:bg-neutral-50 rounded transition-colors disabled:opacity-50 border border-neutral-200"
           title="Upload images"
         >
           📷
         </button>
 
         {/* Message input */}
-        <div className="flex-1">
+        <div className="flex-1 flex items-center">
           <textarea
             ref={textareaRef}
             value={message}
