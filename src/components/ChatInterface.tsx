@@ -121,19 +121,19 @@ const CollectedContentMessage: React.FC<{
           {/* Images section */}
           {collectedData.images && collectedData.images.length > 0 && (
             <div className="mb-3">
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex justify-start items-center gap-2 mb-2">
                 <span className="text-sm">📸</span>
                 <span className="text-caption font-semibold text-neutral-700">
                   图片 ({collectedData.images.length})
                 </span>
               </div>
-              <div className="grid grid-cols-3 gap-2">
-                {collectedData.images.slice(0, 3).map((img, index) => (
+              <div className="flex flex-wrap justify-start items-center gap-2 ">
+                {collectedData.images.map((img, index) => (
                   <img
                     key={index}
                     src={img}
                     alt={`Collected image ${index + 1}`}
-                    className="w-[40px] h-[40px] object-cover rounded border-neutral-300"
+                    className="w-[38px] h-[38px] object-cover rounded border-neutral-300"
                   />
                 ))}
               </div>

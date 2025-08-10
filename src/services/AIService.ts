@@ -336,14 +336,25 @@ export function buildChatMessages(
     if (msg.type === 'collected' && msg.collectedData) {
       const imgs = msg.collectedData.images || [];
       if (imgs.length > 0) {
-        const imageObjects = imgs.map((img) => ({
-          type: 'image',
-          source: {
-            type: 'base64',
-            media_type: 'image/png',
-            data: img,
-          },
-        }));
+        const imageObjects = imgs.map((img) => {
+          // 移除 data URL 前缀，只保留 base64 编码部分
+          let base64Data = img;
+          if (img.startsWith('data:')) {
+            const commaIndex = img.indexOf(',');
+            if (commaIndex !== -1) {
+              base64Data = img.substring(commaIndex + 1);
+            }
+          }
+          
+          return {
+            type: 'image',
+            source: {
+              type: 'base64',
+              media_type: 'image/jpeg',
+              data: base64Data,
+            },
+          };
+        });
         content.push(...imageObjects);
       }
       const contentObjTitle = {
