@@ -1,3 +1,5 @@
+import aiAuto_icon from '../assets/aiAuto_icon.svg';
+
 class DOMWatcher {
   private observer: MutationObserver | null = null;
   private callbacks: Map<string, (element: HTMLElement) => void> = new Map();
@@ -62,17 +64,19 @@ class DOMWatcher {
 }
 
 // 将图片转换为base64的辅助函数
-async function convertImageToBase64(imgElement: HTMLImageElement): Promise<string> {
+async function convertImageToBase64(
+  imgElement: HTMLImageElement
+): Promise<string> {
   return new Promise((resolve, reject) => {
     try {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
-      
+
       if (!ctx) {
         reject(new Error('Canvas context not available'));
         return;
       }
-      
+
       // 确保图片已加载
       if (imgElement.complete) {
         canvas.width = imgElement.naturalWidth || imgElement.width;
@@ -106,7 +110,7 @@ async function collectPageContent() {
   const imgPreviewArea = document.querySelector('.img-preview-area');
   if (imgPreviewArea) {
     const imgElements = imgPreviewArea.querySelectorAll('img.preview');
-    
+
     // 转换所有图片为base64
     const imagePromises: Promise<string>[] = [];
     imgElements.forEach((img: Element) => {
@@ -117,11 +121,11 @@ async function collectPageContent() {
           imagePromises.push(convertImageToBase64(imgElement));
         } else {
           // 对于普通URL，直接使用
-            //   imagePromises.push(Promise.resolve(imgElement.src));
+          //   imagePromises.push(Promise.resolve(imgElement.src));
         }
       }
     });
-    
+
     try {
       const imageResults = await Promise.all(imagePromises);
       data.images = imageResults;
@@ -170,7 +174,7 @@ function applyEditedContent(editedData: {
 }) {
   try {
     console.log('Content Script: 开始应用编辑后的内容:', editedData);
-    
+
     const appliedFields: string[] = [];
 
     // 应用标题
@@ -181,22 +185,23 @@ function applyEditedContent(editedData: {
         if (input) {
           console.log('Content Script: 应用标题:', editedData.title);
           input.value = editedData.title;
-          
+
           // 触发多种事件以确保页面响应
           const events = ['input', 'change', 'keyup', 'blur'];
-          events.forEach(eventType => {
+          events.forEach((eventType) => {
             input.dispatchEvent(new Event(eventType, { bubbles: true }));
           });
-          
+
           // 如果是React组件，尝试触发React事件
-          const reactKey = Object.keys(input).find(key => 
-            key.startsWith('__reactInternalInstance') || 
-            key.startsWith('_reactInternalFiber')
+          const reactKey = Object.keys(input).find(
+            (key) =>
+              key.startsWith('__reactInternalInstance') ||
+              key.startsWith('_reactInternalFiber')
           );
           if (reactKey) {
             input.dispatchEvent(new Event('input', { bubbles: true }));
           }
-          
+
           appliedFields.push('标题');
         } else {
           console.warn('Content Script: 未找到标题输入框');
@@ -211,7 +216,7 @@ function applyEditedContent(editedData: {
       const editorContainer = document.querySelector('.editor-container');
       if (editorContainer) {
         console.log('Content Script: 应用内容:', editedData.content);
-        
+
         // 获取现有的p元素
         const existingPElements = editorContainer.querySelectorAll('p');
 
@@ -220,7 +225,7 @@ function applyEditedContent(editedData: {
           // 使用第一个p元素来放置所有内容
           const firstP = existingPElements[0] as HTMLParagraphElement;
           firstP.textContent = editedData.content;
-          
+
           // 移除其他多余的p元素
           for (let i = 1; i < existingPElements.length; i++) {
             existingPElements[i].remove();
@@ -229,11 +234,11 @@ function applyEditedContent(editedData: {
           // 如果没有现有的p元素，创建一个新的
           const newP = document.createElement('p');
           newP.textContent = editedData.content;
-          
+
           // 设置样式以匹配原有格式
           newP.setAttribute('data-slate-node', 'element');
           newP.setAttribute('data-slate-object', 'block');
-          
+
           editorContainer.appendChild(newP);
         }
 
@@ -241,7 +246,7 @@ function applyEditedContent(editedData: {
         const focusEvent = new Event('focus', { bubbles: true });
         const inputEvent = new Event('input', { bubbles: true });
         const changeEvent = new Event('change', { bubbles: true });
-        
+
         editorContainer.dispatchEvent(focusEvent);
         editorContainer.dispatchEvent(inputEvent);
         editorContainer.dispatchEvent(changeEvent);
@@ -254,23 +259,23 @@ function applyEditedContent(editedData: {
 
     if (appliedFields.length > 0) {
       console.log(`Content Script: 应用完成 - ${appliedFields.join('、')}`);
-      return { 
-        success: true, 
+      return {
+        success: true,
         message: `${appliedFields.join('、')}已成功应用到页面`,
-        appliedFields 
+        appliedFields,
       };
     } else {
       console.warn('Content Script: 没有应用任何内容');
-      return { 
-        success: false, 
-        error: '没有找到可应用的页面元素' 
+      return {
+        success: false,
+        error: '没有找到可应用的页面元素',
       };
     }
   } catch (error) {
     console.error('Content Script: 应用内容失败:', error);
-    return { 
-      success: false, 
-      error: (error as Error).message 
+    return {
+      success: false,
+      error: (error as Error).message,
     };
   }
 }
@@ -278,119 +283,46 @@ function applyEditedContent(editedData: {
 // 创建AI助手按钮的函数
 function createAIAssistantButton(): HTMLSpanElement {
   const button = document.createElement('span');
-  
-  // 设置按钮样式，符合小红书风格
+
+  // 设置按钮样式，使用SVG图标
   button.innerHTML = `
-    <div style="display: flex; align-items: center; gap: 4px;">
-      <span style="font-size: 14px;">✨</span>
-      <span style="font-size: 12px; font-weight: 500;">AI 一键生成</span>
-    </div>
+    <img src="${aiAuto_icon}" alt="AI一键生成" style="width: auto; height: 24px; object-fit: contain;" />
   `;
-  
+
   // 应用样式
   Object.assign(button.style, {
-    backgroundColor: '#ff4757',
-    color: 'white',
-    border: '#ff4757',
-    borderRadius: '16px',
-    padding: '3px 12px',
-    fontSize: '14px',
-    fontWeight: '500',
     cursor: 'pointer',
     transition: 'all 0.2s ease',
-    boxShadow: '0 2px 4px rgba(255, 71, 87, 0.2)',
     marginLeft: '8px',
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
-    minWidth: '70px',
-    height: '28px',
-    fontFamily:
-      '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     verticalAlign: 'middle',
   });
 
   // 悬停效果
   button.addEventListener('mouseenter', () => {
     Object.assign(button.style, {
-      backgroundColor: '#ff3742',
       transform: 'translateY(-1px)',
-      boxShadow: '0 4px 8px rgba(255, 71, 87, 0.3)'
+      opacity: '0.9',
     });
   });
 
   button.addEventListener('mouseleave', () => {
     Object.assign(button.style, {
-      backgroundColor: '#ff4757',
       transform: 'translateY(0)',
-      boxShadow: '0 2px 4px rgba(255, 71, 87, 0.2)'
+      opacity: '1',
     });
   });
 
   return button;
 }
 
-// 更新按钮状态的函数
-function updateButtonState(button: HTMLSpanElement, state: 'idle' | 'loading' | 'success' | 'error') {
-  const states = {
-    idle: {
-      html: `<div style="display: flex; align-items: center; gap: 4px;"><span style="font-size: 14px;">✨</span><span style="font-size: 12px; font-weight: 500;">AI 生成</span></div>`,
-      backgroundColor: '#ff4757',
-      disabled: false
-    },
-    loading: {
-      html: `<div style="display: flex; align-items: center; gap: 4px;"><span style="font-size: 14px; animation: spin 1s linear infinite; display: inline-block;">⚡</span><span style="font-size: 12px; font-weight: 500;">生成中...</span></div>`,
-      backgroundColor: '#ffa502',
-      disabled: true
-    },
-    success: {
-      html: `<div style="display: flex; align-items: center; gap: 4px;"><span style="font-size: 14px;">✅</span><span style="font-size: 12px; font-weight: 500;">已生成</span></div>`,
-      backgroundColor: '#2ed573',
-      disabled: false
-    },
-    error: {
-      html: `<div style="display: flex; align-items: center; gap: 4px;"><span style="font-size: 14px;">❌</span><span style="font-size: 12px; font-weight: 500;">重试</span></div>`,
-      backgroundColor: '#ff4757',
-      disabled: false
-    }
-  };
-
-  const stateConfig = states[state];
-  button.innerHTML = stateConfig.html;
-  button.style.backgroundColor = stateConfig.backgroundColor;
-  
-  // 用样式来模拟disabled状态
-  if (stateConfig.disabled) {
-    button.style.opacity = '0.7';
-    button.style.cursor = 'not-allowed';
-    button.dataset.disabled = 'true';
-  } else {
-    button.style.opacity = '1';
-    button.style.cursor = 'pointer';
-    button.dataset.disabled = 'false';
-  }
-
-  // 添加旋转动画的CSS
-  if (state === 'loading') {
-    const style = document.createElement('style');
-    style.textContent = `
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
-    `;
-    if (!document.querySelector('#ai-button-animation')) {
-      style.id = 'ai-button-animation';
-      document.head.appendChild(style);
-    }
-  }
-}
-
 // 使用方法
 const domWatcher = new DOMWatcher();
 domWatcher.watch('.title.setting', (element) => {
   console.log('找到目标元素:', element);
-  
+
   // 检查是否已经添加了AI按钮，避免重复添加
   if (element.querySelector('.ai-assistant-button')) {
     return;
@@ -399,7 +331,7 @@ domWatcher.watch('.title.setting', (element) => {
   // 创建AI助手按钮
   const aiButton = createAIAssistantButton();
   aiButton.classList.add('ai-assistant-button');
-  
+
   // 添加点击事件
   aiButton.addEventListener('click', async () => {
     // 检查是否处于禁用状态
@@ -408,9 +340,6 @@ domWatcher.watch('.title.setting', (element) => {
     }
 
     try {
-      // 更新按钮状态为加载中
-      updateButtonState(aiButton, 'loading');
-      
       // 收集页面内容
       const collectedData = await collectPageContent();
 
@@ -423,27 +352,10 @@ domWatcher.watch('.title.setting', (element) => {
           content: collectedData,
         },
       });
-      
+
       console.log('内容收集完成:', response);
-      
-      // 更新按钮状态为成功
-      updateButtonState(aiButton, 'success');
-      
-      // 2秒后恢复原状态
-      setTimeout(() => {
-        updateButtonState(aiButton, 'idle');
-      }, 2000);
-      
     } catch (error) {
       console.error('内容收集失败:', error);
-      
-      // 更新按钮状态为错误
-      updateButtonState(aiButton, 'error');
-      
-      // 3秒后恢复原状态
-      setTimeout(() => {
-        updateButtonState(aiButton, 'idle');
-      }, 3000);
     }
   });
 
@@ -456,13 +368,15 @@ domWatcher.start();
 
 // 监听来自sidepanel的消息
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  console.log('Content Script: 收到消息:', { action: message.action, sender: sender.tab?.id });
+  console.log('Content Script: 收到消息:', {
+    action: message.action,
+    sender: sender.tab?.id,
+  });
 
   if (message.action === 'messageFromSidepanel') {
     console.log('Content Script: 收到来自sidepanel的消息:', message.data);
     sendResponse({ success: true, message: '消息已在页面显示' });
     return true;
-    
   } else if (message.action === 'applyEditedContent') {
     console.log('Content Script: 收到应用编辑内容的请求:', message.data);
 
@@ -484,7 +398,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log('Content Script: 应用结果:', result);
     sendResponse(result);
     return true;
-    
   } else {
     console.log('Content Script: 未知消息类型:', message.action);
     sendResponse({ success: false, error: '未知消息类型' });
