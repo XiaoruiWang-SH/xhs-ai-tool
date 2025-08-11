@@ -67,7 +67,7 @@ class DOMWatcher {
 
 // 使用方法
 const domWatcher = new DOMWatcher();
-domWatcher.watch('.title.setting', (element) => {
+domWatcher.watch('.post-page .title.setting', (element) => {
   console.log('找到目标元素:', element);
 
   // 检查是否已经添加了AI按钮，避免重复添加
@@ -120,7 +120,7 @@ async function collectPageContent() {
   };
 
   // a: 收集 .img-preview-area 下的所有 .img.preview 元素
-  const imgPreviewArea = document.querySelector('.img-preview-area');
+  const imgPreviewArea = document.querySelector('.post-page  .img-preview-area');
   if (imgPreviewArea) {
     const imgElements = imgPreviewArea.querySelectorAll('img.preview');
 
@@ -155,7 +155,7 @@ async function collectPageContent() {
   }
 
   // b: 收集 .plugin.title-container .d-text 的input值
-  const titleContainer = document.querySelector('.title-container');
+  const titleContainer = document.querySelector('.post-page .title-container');
   if (titleContainer) {
     const input = titleContainer.querySelector('input') as HTMLInputElement;
     if (input) {
@@ -164,7 +164,7 @@ async function collectPageContent() {
   }
 
   // c: 收集 .plugin.editor-container 的P元素内容
-  const editorContainer = document.querySelector('.editor-container');
+  const editorContainer = document.querySelector('.post-page .editor-container');
   if (editorContainer) {
     const pElements = editorContainer.querySelectorAll('p');
     const contentArray: string[] = [];
@@ -192,7 +192,9 @@ function applyEditedContent(editedData: {
 
     // 应用标题
     if (editedData.title) {
-      const titleContainer = document.querySelector('.title-container');
+      const titleContainer = document.querySelector(
+        '.post-page .title-container'
+      );
       if (titleContainer) {
         const input = titleContainer.querySelector('input') as HTMLInputElement;
         if (input) {
@@ -226,7 +228,9 @@ function applyEditedContent(editedData: {
 
     // 应用内容
     if (editedData.content) {
-      const editorContainer = document.querySelector('.editor-container');
+      const editorContainer = document.querySelector(
+        '.post-page .editor-container'
+      );
       if (editorContainer) {
         console.log('Content Script: 应用内容:', editedData.content);
 
