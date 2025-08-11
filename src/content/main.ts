@@ -272,6 +272,9 @@ async function parseMediaContainerImages(): Promise<string[]> {
     const imagePromises: Promise<string>[] = [];
 
     imgElements.forEach((imgElement: Element, index: number) => {
+      if (index === 0 || index === imgElements.length - 1) {
+        return;
+      }
       const img = imgElement as HTMLImageElement;
       if (img.src && img.src.startsWith('https://')) {
         console.log(`处理第 ${index + 1} 张图片: ${img.src}`);
@@ -512,8 +515,10 @@ function applyCommentContent(commentData: {
     let commentInput: HTMLParagraphElement | null = null;
 
     // 优先尝试通过 ID 查找
-    commentInput = document.querySelector('#content-textarea') as HTMLParagraphElement;
-    
+    commentInput = document.querySelector(
+      '#content-textarea'
+    ) as HTMLParagraphElement;
+
     // 如果通过 ID 找不到，尝试使用完整的 class 路径
     if (!commentInput) {
       commentInput = document.querySelector(

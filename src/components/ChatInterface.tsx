@@ -21,7 +21,13 @@ const ApplyButton: React.FC<{
   className?: string;
   text?: string;
   loadingText?: string;
-}> = ({ onClick, isLoading = false, className = '', text = '📋 应用到页面', loadingText = '应用中...' }) => {
+}> = ({
+  onClick,
+  isLoading = false,
+  className = '',
+  text = '📋 应用到页面',
+  loadingText = '应用中...',
+}) => {
   return (
     <button
       onClick={onClick}
@@ -360,7 +366,10 @@ const AIResultDisplay: React.FC<{
   onRegenerate?: () => void;
   isLoading?: boolean;
 }> = ({ message, onApply, onRegenerate, isLoading = false }) => {
-  if (message.type !== 'result' || (!message.generatedPostData && !message.generatedCommentData)) {
+  if (
+    message.type !== 'result' ||
+    (!message.generatedPostData && !message.generatedCommentData)
+  ) {
     return null;
   }
 
@@ -371,9 +380,7 @@ const AIResultDisplay: React.FC<{
           <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs">
             🤖
           </div>
-          <span className="text-micro text-neutral-500">
-            小红书 AI 助手 {message.messageSource === 'comment' ? '- 评论生成' : '- 内容生成'}
-          </span>
+          <span className="text-micro text-neutral-500">小红书 AI 助手</span>
           <span className="text-micro text-neutral-500 ml-auto">
             {message.timestamp.toLocaleTimeString()}
           </span>
@@ -404,16 +411,20 @@ const AIResultDisplay: React.FC<{
             {/* Content Section */}
             <div className="mb-5">
               <div className="flex items-center gap-1 mb-2">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                  message.messageSource === 'comment' 
-                    ? 'bg-green-100' 
-                    : 'bg-blue-100'
-                }`}>
-                  <span className={`text-sm ${
-                    message.messageSource === 'comment' 
-                      ? 'text-green-600' 
-                      : 'text-blue-600'
-                  }`}>
+                <div
+                  className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                    message.messageSource === 'comment'
+                      ? 'bg-green-100'
+                      : 'bg-blue-100'
+                  }`}
+                >
+                  <span
+                    className={`text-sm ${
+                      message.messageSource === 'comment'
+                        ? 'text-green-600'
+                        : 'text-blue-600'
+                    }`}
+                  >
                     {message.messageSource === 'comment' ? '💬' : '📖'}
                   </span>
                 </div>
@@ -421,11 +432,13 @@ const AIResultDisplay: React.FC<{
                   {message.messageSource === 'comment' ? '评论:' : '内容:'}
                 </span>
               </div>
-              <div className={`rounded-xl py-1 px-3 ${
-                message.messageSource === 'comment'
-                  ? 'bg-gradient-to-r from-green-50 to-teal-50 border border-green-200'
-                  : 'bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200'
-              }`}>
+              <div
+                className={`rounded-xl py-1 px-3 ${
+                  message.messageSource === 'comment'
+                    ? 'bg-gradient-to-r from-green-50 to-teal-50 border border-green-200'
+                    : 'bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200'
+                }`}
+              >
                 <div className="text-neutral-900 text-sm leading-relaxed whitespace-pre-wrap">
                   {message.messageSource === 'post'
                     ? message.generatedPostData?.content
@@ -439,8 +452,16 @@ const AIResultDisplay: React.FC<{
               <ApplyButton
                 onClick={() => onApply?.(message.id)}
                 isLoading={isLoading}
-                text={message.messageSource === 'comment' ? '💬 应用评论' : '📋 应用到页面'}
-                loadingText={message.messageSource === 'comment' ? '应用评论中...' : '应用中...'}
+                text={
+                  message.messageSource === 'comment'
+                    ? '💬 应用评论'
+                    : '📋 应用文案'
+                }
+                loadingText={
+                  message.messageSource === 'comment'
+                    ? '应用评论中...'
+                    : '应用文案中...'
+                }
               />
               <RegenerateButton
                 onClick={() => onRegenerate?.()}
@@ -779,7 +800,10 @@ const ChatInterfaceComponent = () => {
         );
         const lastMsg = messages[messages.length - 1];
         const msgSource: MessageSource = lastMsg.messageSource || 'post';
-        const response = await aiService.chatCompletion(chatMessages, msgSource);
+        const response = await aiService.chatCompletion(
+          chatMessages,
+          msgSource
+        );
 
         // Parse response as JSON (should always be JSON now)
         let aiMessage: ChatMessage;
@@ -809,15 +833,18 @@ const ChatInterfaceComponent = () => {
               messageSource: msgSource,
               sender: 'assistant',
               timestamp: new Date(),
-              ...(msgSource === 'post' 
-                ? { generatedPostData: {
-                    title: parsedResponse.title || '',
-                    content: parsedResponse.content,
-                  } }
-                : { generatedCommentData: {
-                    content: parsedResponse.content,
-                  } }
-              ),
+              ...(msgSource === 'post'
+                ? {
+                    generatedPostData: {
+                      title: parsedResponse.title || '',
+                      content: parsedResponse.content,
+                    },
+                  }
+                : {
+                    generatedCommentData: {
+                      content: parsedResponse.content,
+                    },
+                  }),
             };
           } else {
             // 详细的验证错误信息
@@ -883,14 +910,15 @@ const ChatInterfaceComponent = () => {
     scrollToBottom();
   }, [messages]);
 
-  const handleSendMessage = async (
-    userMessageData: UserMessage
-  ) => {
+  const handleSendMessage = async (userMessageData: UserMessage) => {
     if (isLoading) return;
 
     // Get message source from userMessage or default to last message's source
-    const msgSource = userMessageData.msgSource || 
-      (messages.length > 0 ? messages[messages.length - 1].messageSource : undefined) || 
+    const msgSource =
+      userMessageData.msgSource ||
+      (messages.length > 0
+        ? messages[messages.length - 1].messageSource
+        : undefined) ||
       'post';
 
     // Add user message
@@ -932,20 +960,23 @@ const ChatInterfaceComponent = () => {
     try {
       // Prepare data based on message source
       const isPostMessage = targetMessage.messageSource === 'post';
-      const actionType = isPostMessage ? 'applyContentToPage' : 'applyCommentToPage';
-      
-      const data = isPostMessage && targetMessage.generatedPostData
-        ? {
-            messageId,
-            title: targetMessage.generatedPostData.title,
-            content: targetMessage.generatedPostData.content,
-            timestamp: new Date().toISOString(),
-          }
-        : {
-            messageId,
-            content: targetMessage.generatedCommentData?.content,
-            timestamp: new Date().toISOString(),
-          };
+      const actionType = isPostMessage
+        ? 'applyContentToPage'
+        : 'applyCommentToPage';
+
+      const data =
+        isPostMessage && targetMessage.generatedPostData
+          ? {
+              messageId,
+              title: targetMessage.generatedPostData.title,
+              content: targetMessage.generatedPostData.content,
+              timestamp: new Date().toISOString(),
+            }
+          : {
+              messageId,
+              content: targetMessage.generatedCommentData?.content,
+              timestamp: new Date().toISOString(),
+            };
 
       // Send complete content data to be applied
       const response = await chrome.runtime.sendMessage({
@@ -1033,10 +1064,7 @@ const ChatInterfaceComponent = () => {
       </div>
 
       {/* Input area */}
-      <ChatInput
-        onSendMessage={handleSendMessage}
-        disabled={isLoading}
-      />
+      <ChatInput onSendMessage={handleSendMessage} disabled={isLoading} />
     </div>
   );
 };
