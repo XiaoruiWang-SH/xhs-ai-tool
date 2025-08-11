@@ -5,6 +5,7 @@ import { SettingsPanel } from './components/SettingsPanel';
 import type { TabType } from './components/Layout';
 import { MessagesProvider } from './services/MessageContext';
 import { useMessagesDispatch } from './services/messageHooks';
+import { type MessageSource } from './services/messageTypes';
 
 // 内部组件，处理消息监听逻辑
 function AppContent() {
@@ -16,22 +17,44 @@ function AppContent() {
 
   useEffect(() => {
     // 监听来自background script的消息
+    // let action = 'postContentReceived';
+    // if (type === 'comment') {
+    //   action = 'commentContentReceived';
+    // }
+    // if (type === 'reply') {
+    //   action = 'replyContentReceived';
+    // }
     const messageListener = (message: any, _sender: any, sendResponse: any) => {
-      if (message.action === 'contentReceived') {
-        console.log('收到内容收集:', message.data);
+      if (message.action === 'postContentReceived') {
+        console.log('收到post内容收集:', message.data);
         if (messageDispatch) {
           messageDispatch({
             type: 'added',
             data: {
               id: message.data.timestamp,
               type: 'collected',
+              messageSource: 'post',
               sender: 'user',
               timestamp: new Date(message.data.timestamp),
               collectedData: message.data.content,
             },
           });
         }
-
+      } else if (message.action === 'commentContentReceived') {
+        console.log('收到comment内容收集:', message.data);
+        if (messageDispatch) {
+          messageDispatch({
+            type: 'added',
+            data: {
+              id: message.data.timestamp,
+              type: 'collected',
+              messageSource: 'comment',
+              sender: 'user',
+              timestamp: new Date(message.data.timestamp),
+              collectedData: message.data.content,
+            },
+          });
+        }
         // 自动切换到聊天界面
         setActiveTab('chat');
         sendResponse({ success: true });

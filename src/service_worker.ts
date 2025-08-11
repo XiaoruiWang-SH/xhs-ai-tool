@@ -1,3 +1,5 @@
+import { type MessageSource } from "./services/messageTypes";
+
 // background.ts
 /// <reference types="chrome"/>
 
@@ -46,9 +48,13 @@ chrome.runtime.onMessage.addListener(
     sendResponse: (response?: any) => void
   ): boolean => {
     switch (message.action) {
-      case 'contentCollected':
-        console.log('收到内容收集:', message.data);
-        handleContentCollected(message.data, sender, sendResponse);
+      case 'postContentCollected':
+        console.log('文案生成收到内容收集:', message.data);
+        handleContentCollected(message.data, sender, 'post', sendResponse);
+        return false;
+      case 'commentContentCollected':
+        console.log('评论页面收到内容收集:', message.data);
+        handleContentCollected(message.data, sender, 'comment', sendResponse);
         return false;
 
       case 'applyContentToPage':
@@ -67,6 +73,7 @@ chrome.runtime.onMessage.addListener(
 function handleContentCollected(
   data: any,
   sender: chrome.runtime.MessageSender,
+  type: MessageSource,
   sendResponse: (response: any) => void
 ): void {
   try {
@@ -80,11 +87,18 @@ function handleContentCollected(
 
     // 确保侧边栏打开，在callback中发送消息
     openSidePanel(sender.tab.id, () => {
+      let action = 'postContentReceived';
+      if (type === 'comment') {
+        action = 'commentContentReceived';
+      }
+      if (type === 'reply') {
+        action = 'replyContentReceived';
+      }
       // 侧边栏打开成功后，转发消息给sidepanel
       setTimeout(() => {
         chrome.runtime
           .sendMessage({
-            action: 'contentReceived',
+            action: action,
             data: data,
           })
           .then(() => {

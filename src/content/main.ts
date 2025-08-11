@@ -65,6 +65,18 @@ class DOMWatcher {
   }
 }
 
+export interface PostData {
+  title: string;
+  content: string;
+  images: string[];
+}
+
+export interface CommentData {
+  title: string;
+  content: string;
+  images: string[];
+}
+
 // 使用方法
 const domWatcher = new DOMWatcher();
 // genetate post
@@ -93,7 +105,7 @@ domWatcher.watch('.post-page .title.setting', (element) => {
 
       // 发送消息给sidepanel
       const response = await chrome.runtime.sendMessage({
-        action: 'contentCollected',
+        action: 'postContentCollected',
         data: {
           timestamp: new Date().toISOString(),
           url: window.location.href,
@@ -135,10 +147,10 @@ domWatcher.watch(
       }
       try {
         // 收集页面内容
-        const collectedData = await collectNotePageContent();
+        const collectedData = await collectCommentPageContent();
         // 发送消息给sidepanel
         const response = await chrome.runtime.sendMessage({
-          action: 'contentCollected',
+          action: 'commentContentCollected',
           data: {
             timestamp: new Date().toISOString(),
             url: window.location.href,
@@ -160,7 +172,7 @@ domWatcher.start();
 
 // 收集发布页面内容的函数
 async function collectPostPageContent() {
-  const data = {
+  const data: PostData = {
     images: [] as string[],
     title: '',
     content: '',
@@ -322,8 +334,8 @@ async function parseMediaContainerImages(): Promise<string[]> {
 }
 
 // 收集笔记页面内容的函数
-async function collectNotePageContent() {
-  const data = {
+async function collectCommentPageContent() {
+  const data: CommentData = {
     images: [] as string[],
     title: '',
     content: '',

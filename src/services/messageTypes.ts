@@ -1,9 +1,11 @@
 // Message Types according to design spec
 export type MessageType = 'user' | 'ai' | 'result' | 'collected';
+export type MessageSource = 'comment' | 'reply' | 'post';
 
 export interface ChatMessage {
   id: string;
   type: MessageType;
+  messageSource?: MessageSource;
   content?: string;
   sender: 'user' | 'assistant' | 'system';
   timestamp: Date;
