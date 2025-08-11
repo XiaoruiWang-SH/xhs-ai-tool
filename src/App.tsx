@@ -9,10 +9,8 @@ import { type MessageSource } from './services/messageTypes';
 
 // 内部组件，处理消息监听逻辑
 function AppContent() {
-  const [activeTab, setActiveTab] = useState<TabType>('chat');
-  const [connectionStatus] = useState<'connected' | 'connecting' | 'error'>(
-    'connected'
-  );
+  const [showSettings, setShowSettings] = useState<boolean>(false);
+
   const messageDispatch = useMessagesDispatch();
 
   useEffect(() => {
@@ -52,8 +50,6 @@ function AppContent() {
             },
           });
         }
-        // 自动切换到聊天界面
-        setActiveTab('chat');
         sendResponse({ success: true });
       }
     };
@@ -64,28 +60,15 @@ function AppContent() {
       // 断开连接，service worker 会自动检测到
       port.disconnect();
       console.log('已断开与 service worker 的连接');
-      
+
       chrome.runtime.onMessage.removeListener(messageListener);
     };
   }, [messageDispatch]);
 
-  const handleTabChange = (tab: TabType) => {
-    setActiveTab(tab);
-  };
-
   return (
-    <Layout
-      defaultTab={activeTab}
-      connectionStatus={connectionStatus}
-      onTabChange={handleTabChange}
-    >
-      <TabContent tabType="chat">
-        <ChatInterface />
-      </TabContent>
-
-      <TabContent tabType="settings">
-        <SettingsPanel onClose={() => setActiveTab('chat')} />
-      </TabContent>
+    <Layout onSettingsClick={() => setShowSettings(true)}>
+      <ChatInterface />
+      {showSettings && <SettingsPanel onClose={() => setShowSettings(false)} />}
     </Layout>
   );
 }
