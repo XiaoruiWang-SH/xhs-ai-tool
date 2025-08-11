@@ -62,6 +62,14 @@ const CollectedContentMessageForPost: React.FC<{
   timestamp: Date;
   onCommandClickForPost?: (command: string) => void;
 }> = ({ collectedData, timestamp, onCommandClickForPost }) => {
+  const [isVisible, setIsVisible] = useState(false);
+
+  // Trigger animation on mount
+  useEffect(() => {
+    const timer = setTimeout(() => setIsVisible(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
+
   // Common commands for Xiaohongshu content creation
   const commonCommands = [
     {
@@ -118,7 +126,11 @@ const CollectedContentMessageForPost: React.FC<{
 
   return (
     <div className="mb-4 max-w-full">
-      <div className="rounded-lg p-4 border bg-xhs-red-light border-chrome-border shadow-sm">
+      <div className={`rounded-lg p-4 border bg-xhs-red-light border-chrome-border shadow-sm transition-all duration-700 transform ${
+        isVisible 
+          ? 'translate-x-0 opacity-100 scale-100' 
+          : 'translate-x-8 opacity-0 scale-95'
+      }`}>
         {/* Header */}
         <div className="flex items-center gap-2 mb-3">
           <span className="text-sm">🤖</span>
@@ -222,6 +234,14 @@ const CollectedContentMessageForComment: React.FC<{
   timestamp: Date;
   onCommandClickForComment?: (command: string) => void;
 }> = ({ collectedData, timestamp, onCommandClickForComment }) => {
+  const [isVisible, setIsVisible] = useState(false);
+
+  // Trigger animation on mount
+  useEffect(() => {
+    const timer = setTimeout(() => setIsVisible(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
+
   // Common commands for comment generation
   const commonCommands = [
     {
@@ -260,7 +280,11 @@ const CollectedContentMessageForComment: React.FC<{
 
   return (
     <div className="mb-4 max-w-full">
-      <div className="rounded-lg p-4 border bg-blue-50 border-chrome-border shadow-sm">
+      <div className={`rounded-lg p-4 border bg-blue-50 border-chrome-border shadow-sm transition-all duration-700 transform ${
+        isVisible 
+          ? 'translate-x-0 opacity-100 scale-100' 
+          : 'translate-x-8 opacity-0 scale-95'
+      }`}>
         {/* Header */}
         <div className="flex items-center gap-2 mb-3">
           <span className="text-sm">🤖</span>
