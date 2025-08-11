@@ -65,6 +65,51 @@ class DOMWatcher {
   }
 }
 
+// 使用方法
+const domWatcher = new DOMWatcher();
+domWatcher.watch('.title.setting', (element) => {
+  console.log('找到目标元素:', element);
+
+  // 检查是否已经添加了AI按钮，避免重复添加
+  if (element.querySelector('.ai-assistant-button')) {
+    return;
+  }
+
+  // 创建AI助手按钮
+  const aiButton = createAIAssistantButton();
+  aiButton.classList.add('ai-assistant-button');
+
+  // 添加点击事件
+  aiButton.addEventListener('click', async () => {
+    // 检查是否处于禁用状态
+    if (aiButton.dataset.disabled === 'true') {
+      return;
+    }
+
+    try {
+      // 收集页面内容
+      const collectedData = await collectPageContent();
+
+      // 发送消息给sidepanel
+      const response = await chrome.runtime.sendMessage({
+        action: 'contentCollected',
+        data: {
+          timestamp: new Date().toISOString(),
+          url: window.location.href,
+          content: collectedData,
+        },
+      });
+
+      console.log('内容收集完成:', response);
+    } catch (error) {
+      console.error('内容收集失败:', error);
+    }
+  });
+
+  // 将按钮添加到目标元素
+  element.appendChild(aiButton);
+});
+domWatcher.start();
 
 // 收集页面内容的函数
 async function collectPageContent() {
@@ -285,52 +330,6 @@ function createAIAssistantButton(): HTMLSpanElement {
 
   return button;
 }
-
-// 使用方法
-const domWatcher = new DOMWatcher();
-domWatcher.watch('.title.setting', (element) => {
-  console.log('找到目标元素:', element);
-
-  // 检查是否已经添加了AI按钮，避免重复添加
-  if (element.querySelector('.ai-assistant-button')) {
-    return;
-  }
-
-  // 创建AI助手按钮
-  const aiButton = createAIAssistantButton();
-  aiButton.classList.add('ai-assistant-button');
-
-  // 添加点击事件
-  aiButton.addEventListener('click', async () => {
-    // 检查是否处于禁用状态
-    if (aiButton.dataset.disabled === 'true') {
-      return;
-    }
-
-    try {
-      // 收集页面内容
-      const collectedData = await collectPageContent();
-
-      // 发送消息给sidepanel
-      const response = await chrome.runtime.sendMessage({
-        action: 'contentCollected',
-        data: {
-          timestamp: new Date().toISOString(),
-          url: window.location.href,
-          content: collectedData,
-        },
-      });
-
-      console.log('内容收集完成:', response);
-    } catch (error) {
-      console.error('内容收集失败:', error);
-    }
-  });
-
-  // 将按钮添加到目标元素
-  element.appendChild(aiButton);
-});
-domWatcher.start();
 
 // 监听来自sidepanel的消息
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
