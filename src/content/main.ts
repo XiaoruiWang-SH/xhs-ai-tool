@@ -67,6 +67,7 @@ class DOMWatcher {
 
 // 使用方法
 const domWatcher = new DOMWatcher();
+// genetate post
 domWatcher.watch('.post-page .title.setting', (element) => {
   console.log('找到目标元素:', element);
 
@@ -88,7 +89,7 @@ domWatcher.watch('.post-page .title.setting', (element) => {
 
     try {
       // 收集页面内容
-      const collectedData = await collectPageContent();
+      const collectedData = await collectPostPageContent();
 
       // 发送消息给sidepanel
       const response = await chrome.runtime.sendMessage({
@@ -109,10 +110,56 @@ domWatcher.watch('.post-page .title.setting', (element) => {
   // 将按钮添加到目标元素
   element.appendChild(aiButton);
 });
+
+// generate comment
+domWatcher.watch(
+  '.note-container .interaction-container .engage-bar-container .left-icon-area',
+  (element) => {
+    console.log('找到目标元素:', element);
+
+    // 检查是否已经添加了AI按钮，避免重复添加
+    if (element.querySelector('.ai-assistant-button')) {
+      return;
+    }
+
+    // 创建AI助手按钮
+    const aiButton = createAIAssistantButton();
+    aiButton.classList.add('ai-assistant-button');
+
+    // 添加点击事件
+    aiButton.addEventListener('click', async () => {
+      console.log('AI助手按钮被点击');
+      // 检查是否处于禁用状态
+      if (aiButton.dataset.disabled === 'true') {
+        return;
+      }
+      try {
+        // 收集页面内容
+        const collectedData = await collectNotePageContent();
+        // 发送消息给sidepanel
+        const response = await chrome.runtime.sendMessage({
+          action: 'contentCollected',
+          data: {
+            timestamp: new Date().toISOString(),
+            url: window.location.href,
+            content: collectedData,
+          },
+        });
+        console.log('内容收集完成:', response);
+      } catch (error) {
+        console.error('内容收集失败:', error);
+      }
+    });
+
+    // 将按钮添加到目标元素
+    element.appendChild(aiButton);
+  }
+);
+
 domWatcher.start();
 
-// 收集页面内容的函数
-async function collectPageContent() {
+// 收集发布页面内容的函数
+async function collectPostPageContent() {
   const data = {
     images: [] as string[],
     title: '',
@@ -120,7 +167,7 @@ async function collectPageContent() {
   };
 
   // a: 收集 .img-preview-area 下的所有 .img.preview 元素
-  const imgPreviewArea = document.querySelector('.post-page  .img-preview-area');
+  const imgPreviewArea = document.querySelector('.post-page .img-preview-area');
   if (imgPreviewArea) {
     const imgElements = imgPreviewArea.querySelectorAll('img.preview');
 
@@ -164,7 +211,9 @@ async function collectPageContent() {
   }
 
   // c: 收集 .plugin.editor-container 的P元素内容
-  const editorContainer = document.querySelector('.post-page .editor-container');
+  const editorContainer = document.querySelector(
+    '.post-page .editor-container'
+  );
   if (editorContainer) {
     const pElements = editorContainer.querySelectorAll('p');
     const contentArray: string[] = [];
@@ -172,6 +221,137 @@ async function collectPageContent() {
       contentArray.push(p.textContent || '');
     });
     data.content = contentArray.join('\n');
+  }
+
+  console.log('收集到的内容:', data);
+  return data;
+}
+
+// 解析媒体容器中的图片链接并转换为base64
+async function parseMediaContainerImages(): Promise<string[]> {
+  const images: string[] = [];
+
+  try {
+    // 查找媒体容器
+    const mediaContainer = document.querySelector(
+      '.note-container .media-container'
+    );
+    if (!mediaContainer) {
+      console.log('未找到媒体容器 .media-container');
+      return images;
+    }
+
+    // 查找滑动容器中的所有图片
+    const sliderContainer = mediaContainer.querySelector('.slider-container');
+    if (!sliderContainer) {
+      console.log('未找到滑动容器 .slider-container');
+      return images;
+    }
+
+    // 获取所有图片元素
+    const imgElements = sliderContainer.querySelectorAll('img');
+    console.log(`找到 ${imgElements.length} 张图片`);
+
+    if (imgElements.length === 0) {
+      return images;
+    }
+
+    // 转换所有HTTPS图片为base64
+    const imagePromises: Promise<string>[] = [];
+
+    imgElements.forEach((imgElement: Element, index: number) => {
+      const img = imgElement as HTMLImageElement;
+      if (img.src && img.src.startsWith('https://')) {
+        console.log(`处理第 ${index + 1} 张图片: ${img.src}`);
+
+        // 创建新的图片元素来避免跨域问题
+        const promise = new Promise<string>((resolve, reject) => {
+          const proxyImg = new Image();
+          proxyImg.crossOrigin = 'anonymous';
+
+          proxyImg.onload = () => {
+            try {
+              const canvas = document.createElement('canvas');
+              const ctx = canvas.getContext('2d');
+
+              if (!ctx) {
+                reject(new Error('Canvas context not available'));
+                return;
+              }
+
+              canvas.width = proxyImg.naturalWidth || proxyImg.width;
+              canvas.height = proxyImg.naturalHeight || proxyImg.height;
+
+              ctx.drawImage(proxyImg, 0, 0);
+              const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+              resolve(dataUrl);
+            } catch (error) {
+              console.error(`转换图片 ${index + 1} 失败:`, error);
+              // 如果转换失败，返回原始URL
+              resolve(img.src);
+            }
+          };
+
+          proxyImg.onerror = () => {
+            console.error(`加载图片 ${index + 1} 失败: ${img.src}`);
+            // 如果加载失败，返回原始URL
+            resolve(img.src);
+          };
+
+          // 使用原始图片的src，设置crossOrigin来尝试解决跨域问题
+          proxyImg.src = img.src;
+        });
+
+        imagePromises.push(promise);
+      } else {
+        console.log(`跳过非HTTPS图片: ${img.src}`);
+      }
+    });
+
+    // 等待所有图片处理完成
+    if (imagePromises.length > 0) {
+      const results = await Promise.all(imagePromises);
+      images.push(...results);
+      console.log(`成功处理 ${results.length} 张图片`);
+    }
+  } catch (error) {
+    console.error('解析媒体容器图片时发生错误:', error);
+  }
+
+  return images;
+}
+
+// 收集笔记页面内容的函数
+async function collectNotePageContent() {
+  const data = {
+    images: [] as string[],
+    title: '',
+    content: '',
+  };
+
+  // 使用新的解析方法收集媒体容器中的图片
+  try {
+    const mediaImages = await parseMediaContainerImages();
+    data.images = mediaImages;
+  } catch (error) {
+    console.error('收集媒体容器图片失败:', error);
+  }
+
+  // b: 收集标题 - 直接取 div 的内容
+  const titleContainer = document.querySelector('#detail-title') || 
+                         document.querySelector('.note-content .title');
+  if (titleContainer) {
+    data.title = titleContainer.textContent?.trim() || '';
+    console.log('收集到标题:', data.title);
+  }
+
+  // c: 收集内容 - 取所有标签的文字内容
+  const contentContainer = document.querySelector('#detail-desc') || 
+                           document.querySelector('.note-content .desc');
+  if (contentContainer) {
+    // 获取所有文字内容，包括各种标签（span, a等）
+    data.content = contentContainer.textContent?.trim() || '';
+    console.log('收集到内容:', data.content);
   }
 
   console.log('收集到的内容:', data);
