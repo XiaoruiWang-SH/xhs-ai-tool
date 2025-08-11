@@ -29,7 +29,7 @@ function AppContent() {
         console.log('收到post内容收集:', message.data);
         if (messageDispatch) {
           messageDispatch({
-            type: 'added',
+            type: 'clearAdd',
             data: {
               id: message.data.timestamp,
               type: 'collected',
@@ -44,7 +44,7 @@ function AppContent() {
         console.log('收到comment内容收集:', message.data);
         if (messageDispatch) {
           messageDispatch({
-            type: 'added',
+            type: 'clearAdd',
             data: {
               id: message.data.timestamp,
               type: 'collected',

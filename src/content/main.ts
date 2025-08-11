@@ -350,16 +350,18 @@ async function collectCommentPageContent() {
   }
 
   // b: 收集标题 - 直接取 div 的内容
-  const titleContainer = document.querySelector('#detail-title') || 
-                         document.querySelector('.note-content .title');
+  const titleContainer =
+    document.querySelector('#detail-title') ||
+    document.querySelector('.note-content .title');
   if (titleContainer) {
     data.title = titleContainer.textContent?.trim() || '';
     console.log('收集到标题:', data.title);
   }
 
   // c: 收集内容 - 取所有标签的文字内容
-  const contentContainer = document.querySelector('#detail-desc') || 
-                           document.querySelector('.note-content .desc');
+  const contentContainer =
+    document.querySelector('#detail-desc') ||
+    document.querySelector('.note-content .desc');
   if (contentContainer) {
     // 获取所有文字内容，包括各种标签（span, a等）
     data.content = contentContainer.textContent?.trim() || '';
@@ -489,6 +491,70 @@ function applyEditedContent(editedData: {
   }
 }
 
+// 应用评论内容到页面
+function applyCommentContent(commentData: {
+  content?: string;
+  messageId?: string;
+  timestamp?: string;
+}) {
+  try {
+    console.log('Content Script: 开始应用评论内容:', commentData);
+
+    if (!commentData.content) {
+      console.warn('Content Script: 没有评论内容可应用');
+      return {
+        success: false,
+        error: '没有评论内容',
+      };
+    }
+
+    // 查找评论输入框的 p 标签，优先使用 id，然后使用 class 或元素选择器
+    let commentInput: HTMLParagraphElement | null = null;
+
+    // 优先尝试通过 ID 查找
+    commentInput = document.querySelector('#content-textarea') as HTMLParagraphElement;
+    
+    // 如果通过 ID 找不到，尝试使用完整的 class 路径
+    if (!commentInput) {
+      commentInput = document.querySelector(
+        '.interaction-container .engage-bar-container .input-box .content-edit p'
+      ) as HTMLParagraphElement;
+      console.log('Content Script: 通过 class 路径找到评论输入框');
+    } else {
+      console.log('Content Script: 通过 ID 找到评论输入框');
+    }
+
+    if (!commentInput) {
+      console.warn('Content Script: 未找到评论输入框');
+      return {
+        success: false,
+        error: '未找到评论输入框',
+      };
+    }
+
+    // 直接将内容放入 p 标签中
+    commentInput.textContent = commentData.content;
+    commentInput.focus();
+
+    // 触发相关事件以确保页面响应
+    ['input', 'change', 'keyup', 'blur', 'focus'].forEach((eventType) => {
+      commentInput!.dispatchEvent(new Event(eventType, { bubbles: true }));
+    });
+
+    console.log('Content Script: 评论内容已成功应用');
+    return {
+      success: true,
+      message: '评论内容已成功应用到页面',
+    };
+  } catch (error) {
+    console.error('Content Script: 应用评论内容失败:', error);
+    return {
+      success: false,
+      error: (error as Error).message,
+    };
+  }
+}
+
 // 创建AI助手按钮的函数
 function createAIAssistantButton(): HTMLSpanElement {
   const button = document.createElement('span');
@@ -557,6 +623,27 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // 应用内容并返回结果
     const result = applyEditedContent(message.data);
     console.log('Content Script: 应用结果:', result);
+    sendResponse(result);
+    return true;
+  } else if (message.action === 'applyCommentContent') {
+    console.log('Content Script: 收到应用评论内容的请求:', message.data);
+
+    // 验证数据格式
+    if (!message.data) {
+      console.error('Content Script: 缺少数据');
+      sendResponse({ success: false, error: '缺少数据' });
+      return true;
+    }
+
+    if (!message.data.content) {
+      console.error('Content Script: 缺少评论内容');
+      sendResponse({ success: false, error: '缺少评论内容数据' });
+      return true;
+    }
+
+    // 应用评论并返回结果
+    const result = applyCommentContent(message.data);
+    console.log('Content Script: 应用评论结果:', result);
     sendResponse(result);
     return true;
   } else {

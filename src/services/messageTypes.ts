@@ -14,7 +14,8 @@ export interface ChatMessage {
   // For collected content type
   collectedData?: CollectedContent;
   // For AI generated content
-  generatedData?: AiGeneratedContent;
+  generatedPostData?: AiGeneratedPostContent;
+  generatedCommentData?: AiGeneratedCommentContent;
   // For user messages with images
   userMessage?: UserMessage;
 }
@@ -25,19 +26,24 @@ export interface CollectedContent {
   content: string;
 }
 
-export interface AiGeneratedContent {
+export interface AiGeneratedPostContent {
   title: string;
+  content: string;
+}
+export interface AiGeneratedCommentContent {
   content: string;
 }
 
 export interface UserMessage {
   content: string;
   images?: string[];
+  msgSource?: MessageSource;
 }
 
 // Define action types
 export type MessageAction =
-  | { type: 'added'; data: ChatMessage }
+  | { type: 'add'; data: ChatMessage }
+  | { type: 'clearAdd'; data: ChatMessage }
   | { type: 'clear' };
 
 export const initialMessages: ChatMessage[] = [
@@ -45,6 +51,7 @@ export const initialMessages: ChatMessage[] = [
     id: `system-${Date.now()}`,
     type: 'ai',
     sender: 'assistant',
+    messageSource: 'post',
     timestamp: new Date(Date.now()),
     content: `你好！👋 我是小红书AI文案助手，专门帮你创作优质内容！
 
@@ -66,8 +73,11 @@ export function messagesReducer(
   action: MessageAction
 ) {
   switch (action.type) {
-    case 'added': {
+    case 'add': {
       return [...messages, action.data];
+    }
+    case 'clearAdd': {
+      return [action.data];
     }
     case 'clear': {
       return [];

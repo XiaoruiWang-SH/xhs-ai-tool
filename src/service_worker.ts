@@ -61,6 +61,10 @@ chrome.runtime.onMessage.addListener(
         handleApplyContentToPage(message.data, sendResponse);
         return true;
 
+      case 'applyCommentToPage':
+        handleApplyCommentToPage(message.data, sendResponse);
+        return true;
+
       default:
         console.log('未知消息类型:', message.action);
         sendResponse({ error: '未知消息类型' });
@@ -164,6 +168,57 @@ async function handleApplyContentToPage(
     });
   } catch (error) {
     console.error('Service Worker: 应用内容到页面失败:', error);
+    sendResponse({
+      success: false,
+      error: (error as Error).message,
+    });
+  }
+}
+
+// 处理应用评论到页面
+async function handleApplyCommentToPage(
+  data: any,
+  sendResponse: (response: any) => void
+): Promise<void> {
+  try {
+    console.log('Service Worker: 转发评论应用请求到content script:', data);
+
+    // 获取当前活动标签页
+    const [tab] = await chrome.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
+
+    if (!tab.id) {
+      sendResponse({ success: false, error: '无效的标签页ID' });
+      return;
+    }
+
+    // 确保数据包含必要的字段
+    if (!data.content) {
+      sendResponse({ success: false, error: '缺少评论内容数据' });
+      return;
+    }
+
+    // 发送消息到content script应用评论 (只转发，不存储)
+    const response = await chrome.tabs.sendMessage(tab.id, {
+      action: 'applyCommentContent',
+      data: {
+        content: data.content || '',
+        messageId: data.messageId,
+        timestamp: data.timestamp,
+      },
+    });
+
+    console.log('Service Worker: Content script响应:', response);
+
+    sendResponse({
+      success: response?.success || false,
+      message: response?.message || '评论应用状态未知',
+      error: response?.error,
+    });
+  } catch (error) {
+    console.error('Service Worker: 应用评论到页面失败:', error);
     sendResponse({
       success: false,
       error: (error as Error).message,

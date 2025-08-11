@@ -6,7 +6,12 @@ import {
   validateContentResponse,
 } from '../services/AIService';
 import { useMessages, useMessagesDispatch } from '../services/messageHooks';
-import type { ChatMessage, CollectedContent, UserMessage } from '../services/messageTypes';
+import type {
+  ChatMessage,
+  CollectedContent,
+  MessageSource,
+  UserMessage,
+} from '../services/messageTypes';
 import { batchCompressImages } from '../utils/imageUtils';
 
 // Apply Button Component
@@ -14,14 +19,16 @@ const ApplyButton: React.FC<{
   onClick: () => void;
   isLoading?: boolean;
   className?: string;
-}> = ({ onClick, isLoading = false, className = '' }) => {
+  text?: string;
+  loadingText?: string;
+}> = ({ onClick, isLoading = false, className = '', text = '📋 应用到页面', loadingText = '应用中...' }) => {
   return (
     <button
       onClick={onClick}
       disabled={isLoading}
       className={`bg-xhs-red hover:bg-xhs-red-hover text-white px-4 py-2 rounded-full text-caption font-medium border-0 disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200 hover:transform hover:-translate-y-0.5 shadow-md hover:shadow-lg ${className}`}
     >
-      {isLoading ? '应用中...' : '📋 应用到页面'}
+      {isLoading ? loadingText : text}
     </button>
   );
 };
@@ -44,11 +51,11 @@ const RegenerateButton: React.FC<{
 };
 
 // Collected Content Message Component
-const CollectedContentMessage: React.FC<{
+const CollectedContentMessageForPost: React.FC<{
   collectedData: CollectedContent;
   timestamp: Date;
-  onCommandClick?: (command: string) => void;
-}> = ({ collectedData, timestamp, onCommandClick }) => {
+  onCommandClickForPost?: (command: string) => void;
+}> = ({ collectedData, timestamp, onCommandClickForPost }) => {
   // Common commands for Xiaohongshu content creation
   const commonCommands = [
     {
@@ -100,7 +107,7 @@ const CollectedContentMessage: React.FC<{
   ];
 
   const handleCommandClick = (command: string) => {
-    onCommandClick?.(command);
+    onCommandClickForPost?.(command);
   };
 
   return (
@@ -109,8 +116,8 @@ const CollectedContentMessage: React.FC<{
         {/* Header */}
         <div className="flex items-center gap-2 mb-3">
           <span className="text-sm">🤖</span>
-          <span className="text-caption font-medium text-neutral-700">
-            Collected from webpage
+          <span className="text-caption font-medium text-neutral-500">
+            来自小红书的内容
           </span>
           <span className="text-micro text-neutral-500 ml-auto">
             {timestamp.toLocaleTimeString()}
@@ -203,6 +210,149 @@ const CollectedContentMessage: React.FC<{
   );
 };
 
+// Collected Content Message Component for Comment
+const CollectedContentMessageForComment: React.FC<{
+  collectedData: CollectedContent;
+  timestamp: Date;
+  onCommandClickForComment?: (command: string) => void;
+}> = ({ collectedData, timestamp, onCommandClickForComment }) => {
+  // Common commands for comment generation
+  const commonCommands = [
+    {
+      id: 'generate-comment',
+      icon: '💬',
+      label: '生成评论',
+      command:
+        '请基于这篇笔记的内容生成一条有趣、有价值的评论，可以是赞美、提问、分享经验或表达共鸣',
+      color: 'text-xhs-red border-xhs-red hover:bg-xhs-red-light',
+    },
+    {
+      id: 'ask-question',
+      icon: '❓',
+      label: '提问互动',
+      command: '请基于这篇内容提出1-2个有趣的问题作为评论，促进与博主的互动',
+      color: 'text-blue-600 border-blue-600 hover:bg-blue-50',
+    },
+    {
+      id: 'praise-comment',
+      icon: '👏',
+      label: '夸赞评论',
+      command: '请生成一条真诚的夸赞评论，突出内容的优点和价值',
+      color: 'text-purple-600 border-purple-600 hover:bg-purple-50',
+    },
+    {
+      id: 'emoji-comment',
+      icon: '😊',
+      label: '表情评论',
+      command: '请生成一条带有合适表情符号的评论，让评论更生动活泼',
+      color: 'text-teal-600 border-teal-600 hover:bg-teal-50',
+    },
+  ];
+
+  const handleCommandClick = (command: string) => {
+    onCommandClickForComment?.(command);
+  };
+
+  return (
+    <div className="mb-4 max-w-full">
+      <div className="rounded-lg p-4 border bg-blue-50 border-chrome-border shadow-sm">
+        {/* Header */}
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-sm">🤖</span>
+          <span className="text-caption font-medium text-neutral-500">
+            来自小红书的内容
+          </span>
+          <span className="text-micro text-neutral-500 ml-auto">
+            {timestamp.toLocaleTimeString()}
+          </span>
+        </div>
+
+        {/* Content Card */}
+        <div className="bg-white rounded border-neutral-300 p-3">
+          {/* Images section */}
+          {collectedData.images && collectedData.images.length > 0 && (
+            <div className="mb-3">
+              <div className="flex justify-start items-center gap-2 mb-2">
+                <span className="text-sm">📸</span>
+                <span className="text-caption font-semibold text-neutral-700">
+                  图片 ({collectedData.images.length})
+                </span>
+              </div>
+              <div className="flex flex-wrap justify-start items-center gap-2">
+                {collectedData.images.map((img, index) => (
+                  <img
+                    key={index}
+                    src={img}
+                    alt={`Collected image ${index + 1}`}
+                    className="w-[38px] h-[38px] object-cover rounded border-neutral-300"
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Title section */}
+          {collectedData.title && (
+            <div className="mb-3">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-sm">📝</span>
+                <span className="text-caption font-semibold text-neutral-700">
+                  标题:
+                </span>
+              </div>
+              <p className="text-sm text-neutral-900 ml-6">
+                {collectedData.title}
+              </p>
+            </div>
+          )}
+
+          {/* Content section */}
+          {collectedData.content && (
+            <div className="mb-3">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-sm">📄</span>
+                <span className="text-caption font-semibold text-neutral-700">
+                  内容:
+                </span>
+              </div>
+              <p className="text-sm text-neutral-900 ml-6 line-clamp-3">
+                {collectedData.content.substring(0, 150)}
+                {collectedData.content.length > 150 ? '...' : ''}
+              </p>
+            </div>
+          )}
+
+          {/* Quick Commands */}
+          <div className="mt-4 pt-3 border-t border-neutral-200">
+            <h4 className="text-caption font-medium text-neutral-700 mb-3">
+              快速评论生成
+            </h4>
+            <div className="grid grid-cols-2 gap-2">
+              {commonCommands.map((cmd) => (
+                <button
+                  key={cmd.id}
+                  onClick={() => handleCommandClick(cmd.command)}
+                  className={`flex items-center gap-2 px-3 py-1 text-caption border-[0.5px] rounded-lg transition-colors ${cmd.color}`}
+                >
+                  <span className="text-sm">{cmd.icon}</span>
+                  <span className="text-xs font-medium">{cmd.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Additional Tip */}
+          <div className="mt-3 pt-3 border-t border-neutral-200">
+            <p className="text-micro text-neutral-500 text-center">
+              💡 如有其他评论要求，请直接在下方输入框输入
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // AI Result Display Component - Enhanced Xiaohongshu Style
 const AIResultDisplay: React.FC<{
   message: ChatMessage;
@@ -210,7 +360,7 @@ const AIResultDisplay: React.FC<{
   onRegenerate?: () => void;
   isLoading?: boolean;
 }> = ({ message, onApply, onRegenerate, isLoading = false }) => {
-  if (message.type !== 'result' || !message.generatedData) {
+  if (message.type !== 'result' || (!message.generatedPostData && !message.generatedCommentData)) {
     return null;
   }
 
@@ -221,7 +371,9 @@ const AIResultDisplay: React.FC<{
           <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs">
             🤖
           </div>
-          <span className="text-micro text-neutral-500">小红书 AI 助手</span>
+          <span className="text-micro text-neutral-500">
+            小红书 AI 助手 {message.messageSource === 'comment' ? '- 评论生成' : '- 内容生成'}
+          </span>
           <span className="text-micro text-neutral-500 ml-auto">
             {message.timestamp.toLocaleTimeString()}
           </span>
@@ -230,36 +382,54 @@ const AIResultDisplay: React.FC<{
         {/* Content Card with Xiaohongshu styling */}
         <div className="bg-white rounded-2xl shadow-lg border border-neutral-100 overflow-hidden">
           <div className="p-4">
-            {/* Title Section */}
-            <div className="mb-4">
-              <div className="flex items-center gap-1 mb-2">
-                <div className="w-6 h-6 rounded-full bg-yellow-100 flex items-center justify-center">
-                  <span className="text-yellow-600 text-sm">📝</span>
+            {/* Title Section - Only for post */}
+            {message.messageSource === 'post' && message.generatedPostData && (
+              <div className="mb-4">
+                <div className="flex items-center gap-1 mb-2">
+                  <div className="w-6 h-6 rounded-full bg-yellow-100 flex items-center justify-center">
+                    <span className="text-yellow-600 text-sm">📝</span>
+                  </div>
+                  <span className="text-caption font-semibold text-neutral-700">
+                    标题:
+                  </span>
                 </div>
-                <span className="text-caption font-semibold text-neutral-700">
-                  标题:
-                </span>
+                <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl py-1 px-3 border border-yellow-200">
+                  <p className="text-neutral-900 font-medium text-sm leading-relaxed">
+                    {message.generatedPostData.title}
+                  </p>
+                </div>
               </div>
-              <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl py-1 px-3 border border-yellow-200">
-                <p className="text-neutral-900 font-medium text-sm leading-relaxed">
-                  {message.generatedData.title}
-                </p>
-              </div>
-            </div>
+            )}
 
             {/* Content Section */}
             <div className="mb-5">
               <div className="flex items-center gap-1 mb-2">
-                <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
-                  <span className="text-blue-600 text-sm">📖</span>
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                  message.messageSource === 'comment' 
+                    ? 'bg-green-100' 
+                    : 'bg-blue-100'
+                }`}>
+                  <span className={`text-sm ${
+                    message.messageSource === 'comment' 
+                      ? 'text-green-600' 
+                      : 'text-blue-600'
+                  }`}>
+                    {message.messageSource === 'comment' ? '💬' : '📖'}
+                  </span>
                 </div>
                 <span className="text-caption font-semibold text-neutral-700">
-                  内容:
+                  {message.messageSource === 'comment' ? '评论:' : '内容:'}
                 </span>
               </div>
-              <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl py-1 px-3 border border-blue-200">
+              <div className={`rounded-xl py-1 px-3 ${
+                message.messageSource === 'comment'
+                  ? 'bg-gradient-to-r from-green-50 to-teal-50 border border-green-200'
+                  : 'bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200'
+              }`}>
                 <div className="text-neutral-900 text-sm leading-relaxed whitespace-pre-wrap">
-                  {message.generatedData.content}
+                  {message.messageSource === 'post'
+                    ? message.generatedPostData?.content
+                    : message.generatedCommentData?.content}
                 </div>
               </div>
             </div>
@@ -269,6 +439,8 @@ const AIResultDisplay: React.FC<{
               <ApplyButton
                 onClick={() => onApply?.(message.id)}
                 isLoading={isLoading}
+                text={message.messageSource === 'comment' ? '💬 应用评论' : '📋 应用到页面'}
+                loadingText={message.messageSource === 'comment' ? '应用评论中...' : '应用中...'}
               />
               <RegenerateButton
                 onClick={() => onRegenerate?.()}
@@ -289,29 +461,57 @@ const AIResultDisplay: React.FC<{
 const MessageBubble: React.FC<{
   message: ChatMessage;
   onApply?: (messageId: string) => void;
-  onCommandClick?: (command: string) => void;
+  onCommandClick?: (command: string, messageSource: MessageSource) => void;
 }> = ({ message, onApply, onCommandClick }) => {
+  const msgSource = message.messageSource || 'post';
   // Handle regenerate click with a specific regenerate prompt
   const handleRegenerateClick = () => {
     if (!onCommandClick) return;
 
     // Create a specific regenerate prompt that requests a different version
-    const regeneratePrompt = `请基于之前的要求重新生成一个不同版本的标题和内容。要求：
+    const regeneratePrompt = `请基于之前的要求重新生成一个不同的版本。要求：
 1. 提供与之前不同的创意角度和表达方式
 2. 保持相同的主题和核心信息
 
 请生成一个全新的、有创意的版本。`;
 
-    onCommandClick(regeneratePrompt);
+    onCommandClick(regeneratePrompt, msgSource);
   };
 
-  // Handle collected content type
-  if (message.type === 'collected' && message.collectedData) {
+  // Handle collected content for generate post
+  if (
+    message.type === 'collected' &&
+    message.messageSource === 'post' &&
+    message.collectedData
+  ) {
     return (
-      <CollectedContentMessage
+      <CollectedContentMessageForPost
         collectedData={message.collectedData}
         timestamp={message.timestamp}
-        onCommandClick={onCommandClick}
+        onCommandClickForPost={(command) => {
+          if (!onCommandClick) return;
+          // Pass the command with the message source
+          onCommandClick(command, 'post');
+        }}
+      />
+    );
+  }
+
+  // Handle collected content for generate comment
+  if (
+    message.type === 'collected' &&
+    message.messageSource === 'comment' &&
+    message.collectedData
+  ) {
+    return (
+      <CollectedContentMessageForComment
+        collectedData={message.collectedData}
+        timestamp={message.timestamp}
+        onCommandClickForComment={(command) => {
+          if (!onCommandClick) return;
+          // Pass the command with the message source
+          onCommandClick(command, 'comment');
+        }}
       />
     );
   }
@@ -328,9 +528,9 @@ const MessageBubble: React.FC<{
   }
 
   // Handle AI generated content with JSON format
-  if (message.type === 'result' && message.generatedData) {
+  if (message.type === 'result') {
     return (
-      <AIResultDisplay 
+      <AIResultDisplay
         message={message}
         onApply={onApply}
         onRegenerate={handleRegenerateClick}
@@ -419,17 +619,19 @@ const ChatInput: React.FC<{
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 处理图片上传
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
 
     try {
       const newImages = await batchCompressImages(Array.from(files));
-      setUploadedImages(prev => [...prev, ...newImages]);
+      setUploadedImages((prev) => [...prev, ...newImages]);
     } catch (error) {
       console.error('图片上传失败:', error);
     }
-    
+
     // 清空文件输入
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -438,14 +640,14 @@ const ChatInput: React.FC<{
 
   // 移除图片
   const removeImage = (index: number) => {
-    setUploadedImages(prev => prev.filter((_, i) => i !== index));
+    setUploadedImages((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleSend = () => {
     if (message.trim() && !disabled) {
       const userMessage: UserMessage = {
         content: message.trim(),
-        images: uploadedImages.length > 0 ? uploadedImages : undefined
+        images: uploadedImages.length > 0 ? uploadedImages : undefined,
       };
       onSendMessage(userMessage);
       setMessage('');
@@ -508,7 +710,7 @@ const ChatInput: React.FC<{
           className="hidden"
           onChange={handleImageUpload}
         />
-        
+
         {/* 图片上传按钮 */}
         <button
           onClick={() => fileInputRef.current?.click()}
@@ -537,7 +739,9 @@ const ChatInput: React.FC<{
         {/* Send button */}
         <button
           onClick={handleSend}
-          disabled={(!message.trim() && uploadedImages.length === 0) || disabled}
+          disabled={
+            (!message.trim() && uploadedImages.length === 0) || disabled
+          }
           className="flex items-center justify-center w-8 h-8 text-white bg-xhs-red rounded hover:bg-xhs-red-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           title="Send message"
         >
@@ -573,8 +777,9 @@ const ChatInterfaceComponent = () => {
           messages,
           aiService.getProvider()
         );
-
-        const response = await aiService.chatCompletion(chatMessages);
+        const lastMsg = messages[messages.length - 1];
+        const msgSource: MessageSource = lastMsg.messageSource || 'post';
+        const response = await aiService.chatCompletion(chatMessages, msgSource);
 
         // Parse response as JSON (should always be JSON now)
         let aiMessage: ChatMessage;
@@ -596,22 +801,30 @@ const ChatInterfaceComponent = () => {
           const parsedResponse = JSON.parse(cleanedContent);
 
           // 使用JSON Schema验证响应格式
-          if (validateContentResponse(parsedResponse)) {
+          if (validateContentResponse(parsedResponse, msgSource)) {
             // Generated content response with structured data
             aiMessage = {
               id: `ai-${Date.now()}`,
               type: 'result',
+              messageSource: msgSource,
               sender: 'assistant',
               timestamp: new Date(),
-              generatedData: {
-                title: parsedResponse.title,
-                content: parsedResponse.content,
-              },
+              ...(msgSource === 'post' 
+                ? { generatedPostData: {
+                    title: parsedResponse.title || '',
+                    content: parsedResponse.content,
+                  } }
+                : { generatedCommentData: {
+                    content: parsedResponse.content,
+                  } }
+              ),
             };
           } else {
             // 详细的验证错误信息
             const errors = [];
-            if (!parsedResponse.title) errors.push('缺少title字段');
+            if (msgSource === 'post' && !parsedResponse.title) {
+              errors.push('缺少title字段');
+            }
             if (!parsedResponse.content) errors.push('缺少content字段');
             if (parsedResponse.title && parsedResponse.title.length > 20)
               errors.push('标题超过20字符限制');
@@ -635,7 +848,7 @@ const ChatInterfaceComponent = () => {
         }
         if (messageDispatch) {
           messageDispatch({
-            type: 'added',
+            type: 'add',
             data: aiMessage,
           });
         }
@@ -655,7 +868,7 @@ const ChatInterfaceComponent = () => {
 
         if (messageDispatch) {
           messageDispatch({
-            type: 'added',
+            type: 'add',
             data: errorMessage,
           });
         }
@@ -670,21 +883,29 @@ const ChatInterfaceComponent = () => {
     scrollToBottom();
   }, [messages]);
 
-  const handleSendMessage = async (userMessageData: UserMessage) => {
+  const handleSendMessage = async (
+    userMessageData: UserMessage
+  ) => {
     if (isLoading) return;
+
+    // Get message source from userMessage or default to last message's source
+    const msgSource = userMessageData.msgSource || 
+      (messages.length > 0 ? messages[messages.length - 1].messageSource : undefined) || 
+      'post';
 
     // Add user message
     const userMessage: ChatMessage = {
       id: `user-${Date.now()}`,
       type: 'user',
       sender: 'user',
+      messageSource: msgSource,
       timestamp: new Date(),
       userMessage: userMessageData,
     };
 
     if (messageDispatch) {
       messageDispatch({
-        type: 'added',
+        type: 'add',
         data: userMessage,
       });
 
@@ -702,22 +923,34 @@ const ChatInterfaceComponent = () => {
     if (
       !targetMessage ||
       targetMessage.type !== 'result' ||
-      !targetMessage.generatedData
+      (!targetMessage.generatedPostData && !targetMessage.generatedCommentData)
     ) {
       console.error('Message not found or no generated data:', messageId);
       return;
     }
 
     try {
+      // Prepare data based on message source
+      const isPostMessage = targetMessage.messageSource === 'post';
+      const actionType = isPostMessage ? 'applyContentToPage' : 'applyCommentToPage';
+      
+      const data = isPostMessage && targetMessage.generatedPostData
+        ? {
+            messageId,
+            title: targetMessage.generatedPostData.title,
+            content: targetMessage.generatedPostData.content,
+            timestamp: new Date().toISOString(),
+          }
+        : {
+            messageId,
+            content: targetMessage.generatedCommentData?.content,
+            timestamp: new Date().toISOString(),
+          };
+
       // Send complete content data to be applied
       const response = await chrome.runtime.sendMessage({
-        action: 'applyContentToPage',
-        data: {
-          messageId,
-          title: targetMessage.generatedData.title,
-          content: targetMessage.generatedData.content,
-          timestamp: new Date().toISOString(),
-        },
+        action: actionType,
+        data,
       });
 
       if (response.success) {
@@ -731,7 +964,7 @@ const ChatInterfaceComponent = () => {
         };
         if (messageDispatch) {
           messageDispatch({
-            type: 'added',
+            type: 'add',
             data: successMessage,
           });
         }
@@ -750,7 +983,7 @@ const ChatInterfaceComponent = () => {
       };
       if (messageDispatch) {
         messageDispatch({
-          type: 'added',
+          type: 'add',
           data: errorMessage,
         });
       }
@@ -766,7 +999,9 @@ const ChatInterfaceComponent = () => {
             key={message.id}
             message={message}
             onApply={handleApplyMessage}
-            onCommandClick={(command: string) => handleSendMessage({ content: command })}
+            onCommandClick={(command: string, msgSource: MessageSource) =>
+              handleSendMessage({ content: command, msgSource: msgSource })
+            }
           />
         ))}
 
@@ -798,7 +1033,10 @@ const ChatInterfaceComponent = () => {
       </div>
 
       {/* Input area */}
-      <ChatInput onSendMessage={handleSendMessage} disabled={isLoading} />
+      <ChatInput
+        onSendMessage={handleSendMessage}
+        disabled={isLoading}
+      />
     </div>
   );
 };
