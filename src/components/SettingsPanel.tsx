@@ -110,73 +110,26 @@ const SettingsPanelComponent: React.FC<SettingsPanelProps> = ({ onClose }) => {
           {/* AI Model Configuration */}
           <section className="mb-6">
             <h3 className="text-lg font-semibold text-neutral-900 mb-4">选择大模型</h3>
-            <div className="space-y-3">
-              <label className="flex items-center gap-3 p-3 rounded-lg border border-neutral-300 bg-white hover:bg-neutral-50 cursor-pointer transition-colors">
-                <input
-                  type="radio"
-                  name="provider"
-                  value="chatgpt"
-                  checked={config.provider === 'chatgpt'}
-                  onChange={(e) => handleConfigChange('provider', e.target.value as AIConfig['provider'])}
-                  className="text-xhs-red focus:ring-xhs-red"
-                />
-                <span className="text-sm font-medium text-neutral-900">ChatGPT</span>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-neutral-700 mb-2">
+                AI 模型
               </label>
-
-              <label className="flex items-center gap-3 p-3 rounded-lg border border-neutral-300 bg-white hover:bg-neutral-50 cursor-pointer transition-colors">
-                <input
-                  type="radio"
-                  name="provider"
-                  value="claude"
-                  checked={config.provider === 'claude'}
-                  onChange={(e) => handleConfigChange('provider', e.target.value as AIConfig['provider'])}
-                  className="text-xhs-red focus:ring-xhs-red"
-                />
-                <span className="text-sm font-medium text-neutral-900">Claude</span>
-              </label>
-
-              <label className="flex items-center gap-3 p-3 rounded-lg border border-neutral-300 bg-white hover:bg-neutral-50 cursor-pointer transition-colors">
-                <input
-                  type="radio"
-                  name="provider"
-                  value="gemini"
-                  checked={config.provider === 'gemini'}
-                  onChange={(e) => handleConfigChange('provider', e.target.value as AIConfig['provider'])}
-                  className="text-xhs-red focus:ring-xhs-red"
-                />
-                <span className="text-sm font-medium text-neutral-900">Gemini</span>
-              </label>
-
-              <label className="flex items-center gap-3 p-3 rounded-lg border border-neutral-300 bg-white hover:bg-neutral-50 cursor-pointer transition-colors">
-                <input
-                  type="radio"
-                  name="provider"
-                  value="tongyi"
-                  checked={config.provider === 'tongyi'}
-                  onChange={(e) => handleConfigChange('provider', e.target.value as AIConfig['provider'])}
-                  className="text-xhs-red focus:ring-xhs-red"
-                />
-                <span className="text-sm font-medium text-neutral-900">通义千问</span>
-              </label>
-
-              <label className="flex items-center gap-3 p-3 rounded-lg border border-neutral-300 bg-white hover:bg-neutral-50 cursor-pointer transition-colors">
-                <input
-                  type="radio"
-                  name="provider"
-                  value="kimi"
-                  checked={config.provider === 'kimi'}
-                  onChange={(e) => handleConfigChange('provider', e.target.value as AIConfig['provider'])}
-                  className="text-xhs-red focus:ring-xhs-red"
-                />
-                <span className="text-sm font-medium text-neutral-900">Kimi</span>
-              </label>
+              <select
+                value={config.provider}
+                onChange={(e) => handleConfigChange('provider', e.target.value as AIConfig['provider'])}
+                className="w-full px-3 py-2 text-sm bg-white border border-neutral-300 rounded-lg focus:border-xhs-red focus:outline-none"
+              >
+                <option value="chatgpt">ChatGPT</option>
+                <option value="claude">Claude</option>
+                <option value="gemini">Gemini</option>
+                <option value="tongyi">通义千问</option>
+                <option value="kimi">Kimi</option>
+              </select>
             </div>
           </section>
 
           {/* API Configuration */}
-          <section className="mb-6">
-            <h3 className="text-lg font-semibold text-neutral-900 mb-4">API 配置</h3>
-            
+          <section className="mb-6">            
             {/* API Key */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-neutral-700 mb-2">
