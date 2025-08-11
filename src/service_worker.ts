@@ -1,4 +1,4 @@
-import { type MessageSource } from "./services/messageTypes";
+import { type MessageSource } from './services/messageTypes';
 
 // background.ts
 /// <reference types="chrome"/>
@@ -7,6 +7,13 @@ interface Message {
   action: string;
   data?: any;
 }
+
+// 记录 side panel 的运行状态
+const sidePanelStatus = {
+  isRunning: false,
+  tabId: null as number | null,
+  port: null as chrome.runtime.Port | null,
+};
 
 // 扩展安装时初始化
 chrome.runtime.onInstalled.addListener((): void => {
@@ -40,6 +47,23 @@ chrome.tabs.onUpdated.addListener(
   }
 );
 
+// 监听连接事件 - 用于追踪 side panel 状态
+chrome.runtime.onConnect.addListener((port) => {
+  if (port.name === 'sidepanel') {
+    console.log('Side panel 已连接，标签页ID:', port.sender?.tab?.id);
+    sidePanelStatus.isRunning = true;
+    sidePanelStatus.tabId = port.sender?.tab?.id || null;
+    sidePanelStatus.port = port;
+
+    port.onDisconnect.addListener(() => {
+      console.log('Side panel 已断开连接');
+      sidePanelStatus.isRunning = false;
+      sidePanelStatus.tabId = null;
+      sidePanelStatus.port = null;
+    });
+  }
+});
+
 // 监听来自侧边栏的消息
 chrome.runtime.onMessage.addListener(
   (
@@ -52,6 +76,7 @@ chrome.runtime.onMessage.addListener(
         console.log('文案生成收到内容收集:', message.data);
         handleContentCollected(message.data, sender, 'post', sendResponse);
         return false;
+
       case 'commentContentCollected':
         console.log('评论页面收到内容收集:', message.data);
         handleContentCollected(message.data, sender, 'comment', sendResponse);
@@ -89,31 +114,46 @@ function handleContentCollected(
       return;
     }
 
-    // 确保侧边栏打开，在callback中发送消息
-    openSidePanel(sender.tab.id, () => {
-      let action = 'postContentReceived';
-      if (type === 'comment') {
-        action = 'commentContentReceived';
-      }
-      if (type === 'reply') {
-        action = 'replyContentReceived';
-      }
-      // 侧边栏打开成功后，转发消息给sidepanel
-      setTimeout(() => {
-        chrome.runtime
-          .sendMessage({
-            action: action,
-            data: data,
-          })
-          .then(() => {
-            sendResponse({ success: true, message: '内容收集事件已处理' });
-          })
-          .catch((error) => {
-            console.error('转发消息失败:', error);
-            sendResponse({ success: false, error: error.message });
-          });
-      }, 500);
-    });
+    const currentTabId = sender.tab.id;
+    let action = 'postContentReceived';
+    if (type === 'comment') {
+      action = 'commentContentReceived';
+    }
+    if (type === 'reply') {
+      action = 'replyContentReceived';
+    }
+
+    // 定义发送消息的函数
+    const sendMessageToSidePanel = () => {
+      chrome.runtime
+        .sendMessage({
+          action: action,
+          data: data,
+        })
+        .then(() => {
+          sendResponse({ success: true, message: '内容收集事件已处理' });
+        })
+        .catch((error) => {
+          console.error('转发消息失败:', error);
+          sendResponse({ success: false, error: error.message });
+        });
+    };
+
+    // 检查 side panel 是否已经在运行
+    if (sidePanelStatus.isRunning && sidePanelStatus.port) {
+      console.log('Side panel 已在运行，直接发送消息');
+      // 直接发送消息，无需延迟
+      sendMessageToSidePanel();
+    } else {
+      console.log('Side panel 未运行，需要先打开');
+      // 需要先打开 side panel，然后发送消息
+      openSidePanel(currentTabId, () => {
+        // 侧边栏打开成功后，延迟发送消息等待初始化完成
+        setTimeout(() => {
+          sendMessageToSidePanel();
+        }, 500);
+      });
+    }
   } catch (error) {
     console.error('处理内容收集失败:', error);
     sendResponse({

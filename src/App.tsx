@@ -16,14 +16,11 @@ function AppContent() {
   const messageDispatch = useMessagesDispatch();
 
   useEffect(() => {
+    // 建立与 service worker 的连接以追踪状态
+    const port = chrome.runtime.connect({ name: 'sidepanel' });
+    console.log('已与 service worker 建立连接');
+
     // 监听来自background script的消息
-    // let action = 'postContentReceived';
-    // if (type === 'comment') {
-    //   action = 'commentContentReceived';
-    // }
-    // if (type === 'reply') {
-    //   action = 'replyContentReceived';
-    // }
     const messageListener = (message: any, _sender: any, sendResponse: any) => {
       if (message.action === 'postContentReceived') {
         console.log('收到post内容收集:', message.data);
@@ -64,6 +61,10 @@ function AppContent() {
     chrome.runtime.onMessage.addListener(messageListener);
 
     return () => {
+      // 断开连接，service worker 会自动检测到
+      port.disconnect();
+      console.log('已断开与 service worker 的连接');
+      
       chrome.runtime.onMessage.removeListener(messageListener);
     };
   }, [messageDispatch]);
