@@ -305,6 +305,7 @@ export class AIService {
         // 注意：Responses API 里，input 是消息数组（role + content parts）
         // 如果你的 APIMessage 已经是正确结构就直接传；否则请在这里做适配
         input: messages,
+        reasoning: { effort: 'low' },
         instructions:
           msgSource === 'post' ? postSystemPrompt : commentSystemPrompt,
         tools: tools,

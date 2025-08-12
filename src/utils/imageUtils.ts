@@ -8,14 +8,14 @@
  * @param file - 要处理的图片文件
  * @param maxWidth - 最大宽度，默认800px
  * @param maxHeight - 最大高度，默认600px
- * @param quality - JPEG压缩质量，默认0.7
+ * @param quality - JPEG压缩质量，默认0.6
  * @returns Promise<string> - Base64格式的压缩图片
  */
 export const compressImageToBase64 = (
   file: File,
   maxWidth: number = 800,
   maxHeight: number = 600,
-  quality: number = 0.7
+  quality: number = 0.6
 ): Promise<string> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -70,12 +70,12 @@ export const compressImageToBase64 = (
 /**
  * 将HTMLImageElement转换为Base64格式 (用于页面中已存在的图片元素)
  * @param imgElement - HTML图片元素
- * @param quality - JPEG压缩质量，默认0.8
+ * @param quality - JPEG压缩质量，默认0.6
  * @returns Promise<string> - Base64格式的图片
  */
 export const convertImageElementToBase64 = (
   imgElement: HTMLImageElement,
-  quality: number = 0.8
+  quality: number = 0.6
 ): Promise<string> => {
   return new Promise((resolve, reject) => {
     try {
@@ -135,7 +135,7 @@ export const batchCompressImages = async (
   files: File[],
   maxWidth: number = 800,
   maxHeight: number = 600,
-  quality: number = 0.7
+  quality: number = 0.6
 ): Promise<string[]> => {
   const imagePromises = files.map(file => 
     compressImageToBase64(file, maxWidth, maxHeight, quality)
