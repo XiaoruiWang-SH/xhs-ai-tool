@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, memo, useCallback } from 'react';
 import {
   AIService,
   buildChatMessages,
-  getAIConfig,
   validateContentResponse,
 } from '../services/AIService';
 import { useMessages, useMessagesDispatch } from '../services/messageHooks';
@@ -13,6 +12,7 @@ import type {
   UserMessage,
 } from '../services/messageTypes';
 import { batchCompressImages } from '../utils/imageUtils';
+import { useAIConfig } from '../services/aiConfigHooks';
 
 // Apply Button Component
 const ApplyButton: React.FC<{
@@ -801,6 +801,7 @@ const ChatInterfaceComponent = () => {
   // Use external messages if provided, otherwise fall back to local state
   const messages = useMessages();
   const messageDispatch = useMessagesDispatch();
+  const aiConfig = useAIConfig();
 
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -814,12 +815,11 @@ const ChatInterfaceComponent = () => {
     async (messages: ChatMessage[]) => {
       try {
         setIsLoading(true);
-        const aiConfig = await getAIConfig();
         const aiService = new AIService(aiConfig);
 
         const chatMessages = buildChatMessages(
           messages,
-          aiService.getProvider()
+          aiConfig
         );
         const lastMsg = messages[messages.length - 1];
         const msgSource: MessageSource = lastMsg.messageSource || 'post';
@@ -926,7 +926,7 @@ const ChatInterfaceComponent = () => {
         setIsLoading(false);
       }
     },
-    [messageDispatch]
+    [messageDispatch, aiConfig]
   );
 
   useEffect(() => {
@@ -1045,7 +1045,7 @@ const ChatInterfaceComponent = () => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-neutral-50">
+    <div className="flex flex-col h-full bg-neutral-50 overflow-y-scroll">
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto p-4">
         {messages.map((message) => (

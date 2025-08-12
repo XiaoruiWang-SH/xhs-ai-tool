@@ -1,18 +1,13 @@
 import OpenAI from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
 import { type ChatMessage, type MessageSource } from './messageTypes';
+import type { AIConfig } from '../components/SettingsPanel';
+import type { ResponseCreateParamsBase } from 'openai/resources/responses/responses.mjs';
 
 // API message format for OpenAI/Claude
 export interface APIMessage {
   role: 'system' | 'user' | 'assistant';
   content: any[];
-}
-
-export interface AIConfig {
-  provider: string;
-  apiKey: string;
-  model: string;
-  baseUrl?: string;
 }
 
 export interface AIResponse {
@@ -56,29 +51,6 @@ export const XHS_COMMENT_SCHEMA = {
   additionalProperties: false,
 };
 
-// 验证响应是否符合Schema
-export function validateContentResponse(
-  response: any,
-  msgSource: MessageSource = 'post'
-): response is { title?: string; content: string } {
-  if (
-    typeof response !== 'object' ||
-    response === null ||
-    typeof response.content !== 'string' ||
-    response.content.length > 10000
-  ) {
-    return false;
-  }
-
-  // For post messages, title is required
-  if (msgSource === 'post') {
-    return typeof response.title === 'string' && response.title.length <= 100;
-  }
-
-  // For comment messages, title is optional
-  return true;
-}
-
 export class AIService {
   private openai: OpenAI | null = null;
   private anthropic: Anthropic | null = null;
@@ -99,11 +71,10 @@ export class AIService {
           dangerouslyAllowBrowser: true, // 允许在浏览器环境中使用
         });
         console.log('Anthropic Claude client initialized');
-      } else {
+      } else if (this.config.provider === 'chatgpt') {
         // Default to OpenAI
         this.openai = new OpenAI({
           apiKey: this.config.apiKey,
-          baseURL: this.config.baseUrl || 'https://api.openai.com/v1',
           dangerouslyAllowBrowser: true,
         });
         console.log('OpenAI client initialized');
@@ -120,9 +91,10 @@ export class AIService {
   ): Promise<AIResponse> {
     if (this.config.provider === 'claude') {
       return this.claudeChatCompletion(messages, msgSource);
-    } else {
+    } else if (this.config.provider === 'chatgpt') {
       return this.openaiChatCompletion(messages, msgSource);
     }
+    return Promise.reject(new Error('Unsupported AI provider'));
   }
 
   public getProvider(): string {
@@ -140,40 +112,6 @@ export class AIService {
     }
 
     try {
-      // 小红书内容生成的系统提示词
-      const postSystemPrompt = `你是一个专业的小红书内容创作专家，擅长创作吸引人的标题和内容。
-
-请根据用户提供的内容和要求，生成符合小红书风格的标题和正文内容。
-
-要求：
-1. 标题要吸引人，有点击欲望，不超过20个字符
-2. 内容要有价值，可读性强，符合小红书用户喜好
-3. 适当使用表情符号和话题标签（#标签#）
-4. 语言风格要亲切自然，贴近用户
-5. 内容要真实有用，避免夸大宣传
-`;
-
-      // 小红书评论生成的系统提示词
-      const commentSystemPrompt = `你是一个专业的小红书评论助手，擅长生成有趣、有价值的评论内容。
-
-请根据用户提供的笔记内容，生成一条简短的评论。
-
-要求：
-1. 评论要真诚自然，避免过于商业化
-2. 可以是赞美、提问、分享经验或表达共鸣
-3. 适当使用表情符号，让评论更生动
-4. 字数控制在100字以内
-5. 语气要友好亲切，符合小红书社区氛围
-6. 避免刷屏式的无意义评论
-
-评论类型可以是：
-- 赞美型：夸赞内容的优点和价值
-- 互动型：提出有趣的问题促进讨论
-- 经验型：分享相关的个人经验或建议  
-- 共鸣型：表达对内容的认同和共鸣
-- 幽默型：以轻松幽默的方式回应
-`;
-
       const conversationMessages = messages.filter((m) => m.role !== 'system');
 
       // Claude消息格式
@@ -298,55 +236,47 @@ export class AIService {
         'OpenAI client not initialized. Please check your API key.'
       );
     }
-
     try {
-      // 为支持的模型启用structured outputs
-      const modelSupportsStructured = [
-        'gpt-4o',
-        'gpt-4o-mini',
-        'gpt-4-turbo',
-      ].some((model) => this.config.model?.includes(model));
-
-      const completionParams: OpenAI.Chat.Completions.ChatCompletionCreateParams =
-        {
-          model: this.config.model || 'gpt-3.5-turbo',
-          messages:
-            messages as OpenAI.Chat.Completions.ChatCompletionMessageParam[],
-          max_tokens: 1000,
-          temperature: 0.7,
-        };
+      const responseParams: ResponseCreateParamsBase = {
+        model: 'gpt-5',
+        input: messages,
+        instructions:
+          msgSource === 'post' ? postSystemPrompt : commentSystemPrompt,
+        max_output_tokens: 1000,
+      };
 
       // 如果模型支持，添加response_format
-      if (modelSupportsStructured) {
-        const schema =
-          msgSource === 'post' ? XHS_CONTENT_SCHEMA : XHS_COMMENT_SCHEMA;
-        const schemaName = msgSource === 'post' ? 'xhs_content' : 'xhs_comment';
-        const schemaDescription =
-          msgSource === 'post' ? '小红书内容生成格式' : '小红书评论生成格式';
+      const schema =
+        msgSource === 'post' ? XHS_CONTENT_SCHEMA : XHS_COMMENT_SCHEMA;
+      const schemaName = msgSource === 'post' ? 'xhs_content' : 'xhs_comment';
+      const schemaDescription =
+        msgSource === 'post' ? '小红书内容生成格式' : '小红书评论生成格式';
 
-        completionParams.response_format = {
+      responseParams.text = {
+        format: {
           type: 'json_schema',
-          json_schema: {
-            name: schemaName,
-            description: schemaDescription,
-            schema: schema,
-            strict: true,
-          },
-        } as any;
-      }
+          name: schemaName,
+          schema: schema,
+          strict: true,
+          description: schemaDescription,
+        },
+      };
 
-      const response = await this.openai.chat.completions.create(
-        completionParams
-      );
+      const response = await this.openai.responses.create(responseParams);
+      console.log('OpenAI API response:', response);
 
-      const choice = response.choices[0];
-      if (!choice || !choice.message) {
-        throw new Error('Invalid response from OpenAI API');
-      }
+      // const choice = response. ;
+      // if (!choice || !choice.message) {
+      //   throw new Error('Invalid response from OpenAI API');
+      // }
 
+      // return {
+      //   content: choice.message.content || '',
+      //   usage: response.usage || undefined,
+      // };
       return {
-        content: choice.message.content || '',
-        usage: response.usage || undefined,
+        content: '',
+        usage: undefined,
       };
     } catch (error) {
       console.error('OpenAI API call failed:', error);
@@ -400,8 +330,17 @@ export class AIService {
 // 构建聊天消息的辅助函数 - 根据不同AI提供商调整系统提示词
 export function buildChatMessages(
   data: ChatMessage[],
-  _provider: string = 'openai'
+  aiConfig: AIConfig
 ): APIMessage[] {
+  if (aiConfig.provider === 'claude') {
+    return buildClaudeChatMessages(data);
+  } else if (aiConfig.provider === 'chatgpt') {
+    return buildChatgptChatMessages(data);
+  }
+  return buildChatgptChatMessages(data);
+}
+
+function buildClaudeChatMessages(data: ChatMessage[]): APIMessage[] {
   const messages: APIMessage[] = [];
 
   // 添加完整的对话历史，只区分user和assistant
@@ -524,25 +463,165 @@ export function buildChatMessages(
   return messages;
 }
 
-// 从Chrome存储获取AI配置
-export async function getAIConfig(): Promise<AIConfig> {
-  try {
-    const result = await chrome.storage.sync.get(['aiConfig']);
-    return (
-      result.aiConfig || {
-        provider: 'openai',
-        apiKey: '',
-        model: 'gpt-3.5-turbo',
-        baseUrl: 'https://api.openai.com/v1',
+function buildChatgptChatMessages(data: ChatMessage[]): APIMessage[] {
+  const messages: APIMessage[] = [];
+
+  // 添加完整的对话历史，只区分user和assistant
+  const totalNumMsgs = data.length;
+  const userfulMessages = data.filter((msg, index) => {
+    if (
+      totalNumMsgs > 6 &&
+      index !== 0 &&
+      index !== 1 &&
+      index !== totalNumMsgs - 1 &&
+      index !== totalNumMsgs - 2 &&
+      index !== totalNumMsgs - 3
+    )
+      return false;
+    return msg.sender === 'user' || msg.sender === 'assistant';
+  });
+
+  userfulMessages.forEach((msg) => {
+    const role: 'user' | 'assistant' =
+      msg.sender === 'user' ? 'user' : 'assistant';
+    const content: any[] = [];
+
+    // Handle user messages with uploaded images
+    if (msg.sender === 'user' && msg.userMessage) {
+      // Add user uploaded images
+      if (msg.userMessage.images && msg.userMessage.images.length > 0) {
+        const imageObjects = msg.userMessage.images.map((img) => {
+          return {
+            type: 'input_image',
+            image_url: img,
+          };
+        });
+        content.push(...imageObjects);
       }
-    );
-  } catch (error) {
-    console.error('Failed to get AI config:', error);
-    return {
-      provider: 'openai',
-      apiKey: '',
-      model: 'gpt-3.5-turbo',
-      baseUrl: 'https://api.openai.com/v1',
-    };
-  }
+
+      // Add user text content
+      const textContent = {
+        type: 'input_text',
+        text: msg.userMessage.content,
+      };
+      content.push(textContent);
+    } else if (msg.type === 'collected' && msg.collectedData) {
+      const imgs = msg.collectedData.images || [];
+      if (imgs.length > 0) {
+        const imageObjects = imgs.map((img) => {
+          return {
+            type: 'input_image',
+            image_url: img,
+          };
+        });
+        content.push(...imageObjects);
+      }
+      const contentObjTitle = {
+        type: 'input_text',
+        text: `小红书文案标题: ${msg.collectedData.title}`,
+      };
+      content.push(contentObjTitle);
+      const contentObjContent = {
+        type: 'input_text',
+        text: `小红书文案内容: ${msg.collectedData.content}`,
+      };
+      content.push(contentObjContent);
+    } else if (msg.type === 'result' && msg.generatedPostData) {
+      const aiContentObjTitle = {
+        type: 'output_text',
+        text: `AI生成的小红书文案标题: ${msg.generatedPostData.title}`,
+      };
+      content.push(aiContentObjTitle);
+      const aiContentObjContent = {
+        type: 'output_text',
+        text: `AI生成的小红书文案内容: ${msg.generatedPostData.content}`,
+      };
+      content.push(aiContentObjContent);
+    } else if (msg.type === 'result' && msg.generatedCommentData) {
+      const aiContentObjComment = {
+        type: 'output_text',
+        text: `AI生成的小红书评论内容: ${msg.generatedCommentData.content}`,
+      };
+      content.push(aiContentObjComment);
+    } else {
+      let contentObj = {};
+      if (msg.sender === 'user') {
+        contentObj = {
+          type: 'input_text',
+          text: msg.content || '',
+        };
+      } else {
+        contentObj = {
+          type: 'output_text',
+          text: msg.content || '',
+        };
+      }
+
+      content.push(contentObj);
+    }
+
+    messages.push({
+      role,
+      content: content,
+    });
+  });
+
+  return messages;
 }
+
+// 验证响应是否符合Schema
+export function validateContentResponse(
+  response: any,
+  msgSource: MessageSource = 'post'
+): response is { title?: string; content: string } {
+  if (
+    typeof response !== 'object' ||
+    response === null ||
+    typeof response.content !== 'string' ||
+    response.content.length > 10000
+  ) {
+    return false;
+  }
+
+  // For post messages, title is required
+  if (msgSource === 'post') {
+    return typeof response.title === 'string' && response.title.length <= 100;
+  }
+
+  // For comment messages, title is optional
+  return true;
+}
+
+// 小红书内容生成的系统提示词
+const postSystemPrompt = `你是一个专业的小红书内容创作专家，擅长创作吸引人的标题和内容。
+
+请根据用户提供的内容和要求，生成符合小红书风格的标题和正文内容。
+
+要求：
+1. 标题要吸引人，有点击欲望，不超过20个字符
+2. 内容要有价值，可读性强，符合小红书用户喜好
+3. 适当使用表情符号和话题标签（#标签#）
+4. 语言风格要亲切自然，贴近用户
+5. 内容要真实有用，避免夸大宣传
+`;
+
+// 小红书评论生成的系统提示词
+const commentSystemPrompt = `你是一个专业的小红书评论助手，擅长生成有趣、有价值的评论内容。
+
+请根据用户提供的笔记内容，生成一条简短的评论。
+
+要求：
+1. 评论要真诚自然，避免过于商业化
+2. 可以是赞美、提问、分享经验或表达共鸣
+3. 适当使用表情符号，让评论更生动
+4. 字数控制在100字以内
+5. 语气要友好亲切，符合小红书社区氛围
+6. 避免刷屏式的无意义评论
+
+评论类型可以是：
+- 赞美型：夸赞内容的优点和价值
+- 互动型：提出有趣的问题促进讨论
+- 经验型：分享相关的个人经验或建议  
+- 共鸣型：表达对内容的认同和共鸣
+- 幽默型：以轻松幽默的方式回应
+`;
