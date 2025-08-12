@@ -4,6 +4,7 @@ import { ChatInterface } from './components/ChatInterface';
 import { SettingsPanel } from './components/SettingsPanel';
 import type { TabType } from './components/Layout';
 import { MessagesProvider } from './services/MessageContext';
+import { AIConfigProvider } from './services/AIConfigContext';
 import { useMessagesDispatch } from './services/messageHooks';
 import { type MessageSource } from './services/messageTypes';
 
@@ -76,7 +77,9 @@ function AppContent() {
 function App() {
   return (
     <MessagesProvider>
-      <AppContent />
+      <AIConfigProvider>
+        <AppContent />
+      </AIConfigProvider>
     </MessagesProvider>
   );
 }

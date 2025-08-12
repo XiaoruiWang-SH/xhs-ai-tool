@@ -24,9 +24,7 @@ export const Layout: React.FC<LayoutProps> = ({
       <Header onSettingsClick={onSettingsClick} />
 
       {/* Content Area */}
-      <div className="flex-1 overflow-hidden">
         {children}
-      </div>
     </div>
   );
 };

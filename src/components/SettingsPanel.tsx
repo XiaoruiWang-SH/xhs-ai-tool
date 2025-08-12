@@ -1,6 +1,7 @@
 import React, { useState, useEffect, memo } from 'react';
+import { useAIConfig, useAIConfigDispatch } from '../services/aiConfigHooks';
 
-interface AIConfig {
+export interface AIConfig {
   provider: 'chatgpt' | 'claude' | 'gemini' | 'tongyi' | 'kimi';
   apiKey: string;
 }
@@ -10,90 +11,42 @@ interface SettingsPanelProps {
 }
 
 const SettingsPanelComponent: React.FC<SettingsPanelProps> = ({ onClose }) => {
-  const [config, setConfig] = useState<AIConfig>({
-    provider: 'chatgpt',
-    apiKey: ''
-  });
+  const aiConfig = useAIConfig();
+  const dispatch = useAIConfigDispatch();
+  const [config, setConfig] = useState<AIConfig>(aiConfig);
 
   const [isKeyVisible, setIsKeyVisible] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
   const [isTestingConnection, setIsTestingConnection] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<'idle' | 'success' | 'error'>('idle');
-
-  // Load existing configuration
-  useEffect(() => {
-    loadConfig();
-  }, []);
-
-  const loadConfig = async () => {
-    try {
-      const savedConfig = localStorage.getItem('aiConfig');
-      if (savedConfig) {
-        setConfig(JSON.parse(savedConfig));
-      }
-    } catch (error) {
-      console.error('Failed to load configuration:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const saveConfig = async () => {
-    setIsSaving(true);
-    try {
-      localStorage.setItem('aiConfig', JSON.stringify(config));
-      onClose();
-    } catch (error) {
-      console.error('Failed to save configuration:', error);
-      setConnectionStatus('error');
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  const [connectionStatus, setConnectionStatus] = useState<
+    'idle' | 'success' | 'error'
+  >('idle');
 
   const testConnection = async () => {
-    if (!config.apiKey.trim()) {
-      setConnectionStatus('error');
-      return;
-    }
-
-    setIsTestingConnection(true);
-    setConnectionStatus('idle');
-
-    try {
-      // Simulate API test - in real implementation, this would test the actual API
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // For demo purposes, randomly succeed or fail
-      const success = Math.random() > 0.3;
-      
-      setConnectionStatus(success ? 'success' : 'error');
-    } catch (error) {
-      console.error('Connection test failed:', error);
-      setConnectionStatus('error');
-    } finally {
-      setIsTestingConnection(false);
-    }
+    // if (!config.apiKey.trim()) {
+    //   setConnectionStatus('error');
+    //   return;
+    // }
+    // setIsTestingConnection(true);
+    // setConnectionStatus('idle');
+    // try {
+    //   // Simulate API test - in real implementation, this would test the actual API
+    //   await new Promise((resolve) => setTimeout(resolve, 2000));
+    //   // For demo purposes, randomly succeed or fail
+    //   const success = Math.random() > 0.3;
+    //   setConnectionStatus(success ? 'success' : 'error');
+    // } catch (error) {
+    //   console.error('Connection test failed:', error);
+    //   setConnectionStatus('error');
+    // } finally {
+    //   setIsTestingConnection(false);
+    // }
   };
 
   const handleConfigChange = (field: keyof AIConfig, value: string) => {
-    setConfig(prev => ({ ...prev, [field]: value }));
+    setConfig((prev) => ({ ...prev, [field]: value }));
     // Reset connection status when config changes
     setConnectionStatus('idle');
   };
-
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-full p-8">
-        <div className="text-center">
-          <div className="animate-pulse text-2xl mb-4">⚙️</div>
-          <p className="text-neutral-500">Loading settings...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
@@ -107,16 +60,26 @@ const SettingsPanelComponent: React.FC<SettingsPanelProps> = ({ onClose }) => {
         </button>
 
         <div className="p-6">
+          <div>
+            model: {aiConfig.provider}, apiKey: {aiConfig.apiKey}
+          </div>
           {/* AI Model Configuration */}
           <section className="mb-6">
-            <h3 className="text-lg font-semibold text-neutral-900 mb-4">选择大模型</h3>
+            <h3 className="text-lg font-semibold text-neutral-900 mb-4">
+              选择大模型
+            </h3>
             <div className="mb-4">
               <label className="block text-sm font-medium text-neutral-700 mb-2">
                 AI 模型
               </label>
               <select
                 value={config.provider}
-                onChange={(e) => handleConfigChange('provider', e.target.value as AIConfig['provider'])}
+                onChange={(e) =>
+                  handleConfigChange(
+                    'provider',
+                    e.target.value as AIConfig['provider']
+                  )
+                }
                 className="w-full px-3 py-2 text-sm bg-white border border-neutral-300 rounded-lg focus:border-xhs-red focus:outline-none"
               >
                 <option value="chatgpt">ChatGPT</option>
@@ -129,7 +92,7 @@ const SettingsPanelComponent: React.FC<SettingsPanelProps> = ({ onClose }) => {
           </section>
 
           {/* API Configuration */}
-          <section className="mb-6">            
+          <section className="mb-6">
             {/* API Key */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-neutral-700 mb-2">
@@ -162,7 +125,7 @@ const SettingsPanelComponent: React.FC<SettingsPanelProps> = ({ onClose }) => {
               >
                 {isTestingConnection ? '测试中...' : '测试连通性'}
               </button>
-              
+
               {connectionStatus !== 'idle' && (
                 <div className="flex items-center gap-2">
                   {connectionStatus === 'success' && (
@@ -182,17 +145,19 @@ const SettingsPanelComponent: React.FC<SettingsPanelProps> = ({ onClose }) => {
             </div>
           </section>
 
-
           {/* Action Buttons */}
           <div className="flex gap-3 pt-4 border-t border-neutral-200">
             <button
-              onClick={saveConfig}
-              disabled={isSaving || !config.apiKey.trim()}
+              onClick={() => {
+                dispatch({ type: 'update', data: config });
+                onClose();
+              }}
+              disabled={!config.apiKey.trim()}
               className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-xhs-red rounded-lg hover:bg-xhs-red-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {isSaving ? '保存中...' : '保存'}
+              保存
             </button>
-            
+
             <button
               onClick={onClose}
               className="px-4 py-2.5 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 rounded-lg hover:bg-neutral-50 transition-colors"
