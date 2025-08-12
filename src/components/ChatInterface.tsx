@@ -1005,8 +1005,10 @@ const ChatInterfaceComponent = () => {
       try {
         setIsLoading(true);
         const aiService = new AIService(aiConfig);
-
-        const chatMessages = buildChatMessages(messages, aiConfig);
+        const infoMessages = messages.filter(
+          (msg) => msg.type !== 'introduction'
+        );
+        const chatMessages = buildChatMessages(infoMessages, aiConfig);
         const lastMsg = messages[messages.length - 1];
         const msgSource: MessageSource = lastMsg.messageSource || 'post';
         const response = await aiService.chatCompletion(
