@@ -2,7 +2,10 @@ import OpenAI from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
 import { type ChatMessage, type MessageSource } from './messageTypes';
 import type { AIConfig } from '../components/SettingsPanel';
-import type { ResponseCreateParamsBase } from 'openai/resources/responses/responses.mjs';
+import type {
+  ResponseCreateParamsBase,
+  FunctionTool,
+} from 'openai/resources/responses/responses.mjs';
 
 // API message format for OpenAI/Claude
 export interface APIMessage {
@@ -111,6 +114,50 @@ export class AIService {
       );
     }
 
+    // 定义Tools来强制Claude返回JSON格式
+    const tools: Anthropic.Tool[] = [
+      {
+        name: 'generate_xhs_content',
+        description: '生成小红书内容，包括标题和内容',
+        input_schema: {
+          type: 'object',
+          properties: {
+            title: {
+              type: 'string',
+              maxLength: 20,
+              description:
+                '优化后的标题，要吸引人、有点击欲望，符合小红书风格，不超过20个字符',
+            },
+            content: {
+              type: 'string',
+              maxLength: 1000,
+              description:
+                '优化后的完整内容，可包含表情符号、话题标签、换行等，不超过1000个字符',
+            },
+          },
+          required: ['title', 'content'],
+          additionalProperties: false,
+        },
+      },
+      {
+        name: 'generate_xhs_comment',
+        description: '生成小红书笔记评论',
+        input_schema: {
+          type: 'object',
+          properties: {
+            content: {
+              type: 'string',
+              maxLength: 1000,
+              description:
+                '生成的小红书笔记评论，可包含表情符号，不超过100个字符',
+            },
+          },
+          required: ['content'],
+          additionalProperties: false,
+        },
+      },
+    ];
+
     try {
       const conversationMessages = messages.filter((m) => m.role !== 'system');
 
@@ -121,50 +168,6 @@ export class AIService {
           content: msg.content,
         })
       );
-
-      // 定义Tools来强制Claude返回JSON格式
-      const tools: Anthropic.Tool[] = [
-        {
-          name: 'generate_xhs_content',
-          description: '生成小红书内容，包括标题和内容',
-          input_schema: {
-            type: 'object',
-            properties: {
-              title: {
-                type: 'string',
-                maxLength: 20,
-                description:
-                  '优化后的标题，要吸引人、有点击欲望，符合小红书风格，不超过20个字符',
-              },
-              content: {
-                type: 'string',
-                maxLength: 1000,
-                description:
-                  '优化后的完整内容，可包含表情符号、话题标签、换行等，不超过1000个字符',
-              },
-            },
-            required: ['title', 'content'],
-            additionalProperties: false,
-          },
-        },
-        {
-          name: 'generate_xhs_comment',
-          description: '生成小红书笔记评论',
-          input_schema: {
-            type: 'object',
-            properties: {
-              content: {
-                type: 'string',
-                maxLength: 1000,
-                description:
-                  '生成的小红书笔记评论，可包含表情符号，不超过100个字符',
-              },
-            },
-            required: ['content'],
-            additionalProperties: false,
-          },
-        },
-      ];
 
       const response = await this.anthropic.messages.create({
         model: 'claude-sonnet-4-20250514',
@@ -236,48 +239,119 @@ export class AIService {
         'OpenAI client not initialized. Please check your API key.'
       );
     }
-    try {
-      const responseParams: ResponseCreateParamsBase = {
-        model: 'gpt-5',
-        input: messages,
-        instructions:
-          msgSource === 'post' ? postSystemPrompt : commentSystemPrompt,
-        max_output_tokens: 1000,
-      };
 
-      // 如果模型支持，添加response_format
+    // 定义Tools来强制Claude返回JSON格式
+    const tools: FunctionTool[] = [
+      {
+        type: 'function',
+        strict: true,
+        name: 'generate_xhs_content',
+        description: '生成小红书内容，包括标题和内容',
+        parameters: {
+          type: 'object',
+          additionalProperties: false, // 必须显式禁止额外字段
+          properties: {
+            title: {
+              type: 'string',
+              maxLength: 20,
+              description:
+                '优化后的标题，要吸引人、有点击欲望，符合小红书风格，不超过20个字符',
+            },
+            content: {
+              type: 'string',
+              maxLength: 1000,
+              description:
+                '优化后的完整内容，可包含表情符号、话题标签、换行等，不超过1000个字符',
+            },
+          },
+          required: ['title', 'content'], // 建议加 required 提升稳定性
+        },
+      },
+      {
+        type: 'function',
+        strict: true,
+        name: 'generate_xhs_comment',
+        description: '生成小红书笔记评论',
+        parameters: {
+          type: 'object',
+          additionalProperties: false, // 必须显式禁止额外字段
+          properties: {
+            content: {
+              type: 'string',
+              maxLength: 100,
+              description:
+                '生成的小红书笔记评论，可包含表情符号，不超过100个字符',
+            },
+          },
+          required: ['content'],
+        },
+      },
+    ];
+
+    try {
       const schema =
         msgSource === 'post' ? XHS_CONTENT_SCHEMA : XHS_COMMENT_SCHEMA;
       const schemaName = msgSource === 'post' ? 'xhs_content' : 'xhs_comment';
       const schemaDescription =
         msgSource === 'post' ? '小红书内容生成格式' : '小红书评论生成格式';
+      const targetToolName =
+        msgSource === 'comment'
+          ? 'generate_xhs_comment'
+          : 'generate_xhs_content';
 
-      responseParams.text = {
-        format: {
-          type: 'json_schema',
-          name: schemaName,
-          schema: schema,
-          strict: true,
-          description: schemaDescription,
+      const response = await this.openai.responses.create({
+        model: 'gpt-5', // 你现在的模型名
+        // 强制文本产出（不需要工具时建议加上，避免无文本输出）
+        // 注意：Responses API 里，input 是消息数组（role + content parts）
+        // 如果你的 APIMessage 已经是正确结构就直接传；否则请在这里做适配
+        input: messages,
+        instructions:
+          msgSource === 'post' ? postSystemPrompt : commentSystemPrompt,
+        tools: tools,
+        tool_choice: {
+          type: 'function',
+          name: targetToolName,
         },
-      };
+      });
 
-      const response = await this.openai.responses.create(responseParams);
-      console.log('OpenAI API response:', response);
+      if (
+        !response.output ||
+        !Array.isArray(response.output) ||
+        response.output.length === 0
+      ) {
+        throw new Error('Invalid response from chatgpt API');
+      }
 
-      // const choice = response. ;
-      // if (!choice || !choice.message) {
-      //   throw new Error('Invalid response from OpenAI API');
-      // }
+      // 查找tool_use内容
+      const contentItem = response.output.find(
+        (content) => content.type === 'function_call'
+      );
 
-      // return {
-      //   content: choice.message.content || '',
-      //   usage: response.usage || undefined,
-      // };
-      return {
-        content: '',
-        usage: undefined,
-      };
+      if (
+        contentItem &&
+        contentItem.name === targetToolName &&
+        contentItem.arguments
+      ) {
+        let toolInput = {};
+        try {
+          toolInput = JSON.parse(contentItem.arguments) as {
+            title: string;
+            content: string;
+          };
+        } catch (error) {
+          console.error('OpenAI API parse failed:', error);
+        }
+
+        // 验证tool输入是否符合我们的schema
+        if (validateContentResponse(toolInput, msgSource)) {
+          return {
+            content: JSON.stringify(toolInput),
+          };
+        } else {
+          throw new Error('Tool input validation failed');
+        }
+      }
+      return { content: '' };
     } catch (error) {
       console.error('OpenAI API call failed:', error);
       return this.handleAPIError(error, 'OpenAI');
@@ -625,3 +699,62 @@ const commentSystemPrompt = `你是一个专业的小红书评论助手，擅长
 - 共鸣型：表达对内容的认同和共鸣
 - 幽默型：以轻松幽默的方式回应
 `;
+
+/** 安全 JSON 解析：字符串→对象；对象原样返回；失败返回 null */
+function safeParseJSON<T = any>(val: unknown): T | null {
+  if (val == null) return null;
+  if (typeof val === 'string') {
+    try {
+      return JSON.parse(val) as T;
+    } catch {
+      return null;
+    }
+  }
+  if (typeof val === 'object') return val as T;
+  return null;
+}
+
+/** 从 Responses 返回里提取指定工具的 arguments（兼容多种返回形态） */
+function extractToolArgs(resp: any, toolName: string): any | null {
+  // A) 常见：message.tool_calls[*].arguments
+  if (Array.isArray(resp?.output)) {
+    for (const item of resp.output) {
+      if (item?.type === 'message') {
+        if (Array.isArray(item.tool_calls)) {
+          for (const tc of item.tool_calls) {
+            if (tc?.name === toolName && tc?.arguments != null) {
+              const parsed = safeParseJSON(tc.arguments);
+              if (parsed) return parsed;
+            }
+          }
+        }
+        // B) 有些实现把 tool 调用放在 content 分片里
+        if (Array.isArray(item.content)) {
+          for (const part of item.content) {
+            const t = String(part?.type || '');
+            if (
+              (t === 'tool_use' || t === 'tool' || t === 'tool_call') &&
+              part?.name === toolName
+            ) {
+              const args = part?.input ?? part?.arguments;
+              const parsed = safeParseJSON(args);
+              if (parsed) return parsed;
+            }
+          }
+        }
+      }
+      // C) 独立的 tool_call item（不在 message 内）
+      const t = String(item?.type || '');
+      if (t.includes('tool') && item?.name === toolName) {
+        const args = item?.input ?? item?.arguments;
+        const parsed = safeParseJSON(args);
+        if (parsed) return parsed;
+      }
+    }
+  }
+
+  // D) 某些 SDK 会提供已解析对象
+  if (resp?.output_parsed) return resp.output_parsed;
+
+  return null;
+}
