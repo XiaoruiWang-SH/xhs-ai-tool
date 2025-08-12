@@ -13,6 +13,9 @@ import type {
 } from '../services/messageTypes';
 import { batchCompressImages } from '../utils/imageUtils';
 import { useAIConfig } from '../services/aiConfigHooks';
+import aiAutoIcon from '../assets/aiAuto_icon.svg';
+import xhsCommentImg from '../assets/xhs-comment.png';
+import xhsPostImg from '../assets/xhs-post.png';
 
 // Apply Button Component
 const ApplyButton: React.FC<{
@@ -126,11 +129,13 @@ const CollectedContentMessageForPost: React.FC<{
 
   return (
     <div className="mb-4 max-w-full">
-      <div className={`rounded-lg p-4 border bg-xhs-red-light border-chrome-border shadow-sm transition-all duration-700 transform ${
-        isVisible 
-          ? 'translate-x-0 opacity-100 scale-100' 
-          : 'translate-x-8 opacity-0 scale-95'
-      }`}>
+      <div
+        className={`rounded-lg p-4 border bg-xhs-red-light border-chrome-border shadow-sm transition-all duration-700 transform ${
+          isVisible
+            ? 'translate-x-0 opacity-100 scale-100'
+            : 'translate-x-8 opacity-0 scale-95'
+        }`}
+      >
         {/* Header */}
         <div className="flex items-center gap-2 mb-3">
           <span className="text-sm">🤖</span>
@@ -280,11 +285,13 @@ const CollectedContentMessageForComment: React.FC<{
 
   return (
     <div className="mb-4 max-w-full">
-      <div className={`rounded-lg p-4 border bg-blue-50 border-chrome-border shadow-sm transition-all duration-700 transform ${
-        isVisible 
-          ? 'translate-x-0 opacity-100 scale-100' 
-          : 'translate-x-8 opacity-0 scale-95'
-      }`}>
+      <div
+        className={`rounded-lg p-4 border bg-blue-50 border-chrome-border shadow-sm transition-all duration-700 transform ${
+          isVisible
+            ? 'translate-x-0 opacity-100 scale-100'
+            : 'translate-x-8 opacity-0 scale-95'
+        }`}
+      >
         {/* Header */}
         <div className="flex items-center gap-2 mb-3">
           <span className="text-sm">🤖</span>
@@ -501,6 +508,149 @@ const AIResultDisplay: React.FC<{
   );
 };
 
+const Introduction = ({ message }: { message: ChatMessage }) => {
+  return (
+    <div className={`flex mb-4 justify-start`}>
+      <div className="max-w-[300px] w-full">
+        {/* Avatar and sender */}
+        <div className={`flex items-center gap-2 mb-1 flex-row`}>
+          <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs">
+            🤖
+          </div>
+          <span className="text-micro text-neutral-600 font-medium">
+            小红书 AI 助手
+          </span>
+          <span className="text-micro text-neutral-500 ml-auto">
+            {message.timestamp.toLocaleTimeString()}
+          </span>
+        </div>
+
+        {/* Welcome Message Card */}
+        <div className="bg-gradient-to-br from-white to-blue-50 rounded-2xl p-4 shadow-lg border border-blue-100">
+          {/* Header */}
+          <div className="text-center mb-4">
+            <h3 className="text-base font-semibold text-neutral-800 mb-1">
+              你好！👋 欢迎使用小红书AI助手
+            </h3>
+            <p className="text-xs text-neutral-600">
+              专业的创作工具，让你的小红书内容更出色
+            </p>
+          </div>
+
+          {/* Core Features */}
+          <div className="mb-4">
+            <h4 className="text-sm font-semibold text-neutral-700 mb-2 flex items-center gap-1">
+              🎯 核心功能
+            </h4>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-sm">
+                <span className="w-5 h-5 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-xs">
+                  📝
+                </span>
+                <span className="text-neutral-700 text-xs">
+                  智能生成小红书文案和标题
+                </span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <span className="w-5 h-5 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center text-xs">
+                  💬
+                </span>
+                <span className="text-neutral-700 text-xs">
+                  创作高互动性评论内容
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Usage Instructions */}
+          <div className="mb-4">
+            <h4 className="text-sm font-semibold text-neutral-700 mb-3 flex items-center gap-1">
+              💡 使用方法
+            </h4>
+
+            {/* Method 1 */}
+            <div className="mb-4 p-3 bg-white rounded-xl border border-neutral-200">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="w-6 h-6 bg-xhs-red text-white rounded-full flex items-center justify-center text-xs font-bold">
+                  1
+                </span>
+                <span className="text-sm font-medium text-neutral-800">
+                  点击一键生成按钮
+                </span>
+              </div>
+              <p className="text-xs text-neutral-600 mb-2 ml-8">
+                在小红书页面找到
+                <img
+                  className="inline mx-1 w-10 h-4"
+                  src={aiAutoIcon}
+                  alt="AI按钮"
+                />
+                按钮并点击
+              </p>
+
+              {/* Example Images */}
+              <div className="ml-8 space-y-2">
+                <div className="relative">
+                  <p className="text-xs text-neutral-500 mb-1">
+                    📝 笔记创作页面：
+                  </p>
+                  <div className="relative bg-neutral-50 rounded-lg overflow-hidden border-[0.5px]">
+                    <img
+                      src={xhsPostImg}
+                      alt="笔记页面示例"
+                      className="w-full h-auto"
+                    />
+                  </div>
+                </div>
+
+                <div className="relative">
+                  <p className="text-xs text-neutral-500 mb-1">💬 评论页面：</p>
+                  <div className="relative bg-neutral-50 rounded-lg overflow-hidden border-[0.5px]">
+                    <img
+                      src={xhsCommentImg}
+                      alt="评论页面示例"
+                      className="w-full h-auto"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Method 2 */}
+            <div className="p-3 bg-white rounded-xl border border-neutral-200">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                  2
+                </span>
+                <span className="text-sm font-medium text-neutral-800">
+                  直接对话创作
+                </span>
+              </div>
+              <p className="text-xs text-neutral-600 ml-8">
+                在下方输入框直接告诉我需求，如：
+                <br />
+                <span className="italic text-neutral-500">
+                  "帮我写个美食探店文案"
+                </span>
+              </p>
+            </div>
+          </div>
+
+          {/* Call to Action */}
+          <div className="text-center pt-3 border-t border-neutral-200">
+            <p className="text-sm text-neutral-600 mb-2">
+              ✨ 准备好开始创作了吗？
+            </p>
+            <p className="text-xs text-neutral-500">
+              上传图片或描述你的想法，让我帮你打造爆款内容！
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Unified Message Component
 const MessageBubble: React.FC<{
   message: ChatMessage;
@@ -522,12 +672,16 @@ const MessageBubble: React.FC<{
     onCommandClick(regeneratePrompt, msgSource);
   };
 
-  // Handle collected content for generate post
+  if (message.type === 'introduction') {
+    return <Introduction message={message} />;
+  }
+
   if (
     message.type === 'collected' &&
     message.messageSource === 'post' &&
     message.collectedData
   ) {
+    // Handle collected content for generate post
     return (
       <CollectedContentMessageForPost
         collectedData={message.collectedData}
@@ -817,10 +971,7 @@ const ChatInterfaceComponent = () => {
         setIsLoading(true);
         const aiService = new AIService(aiConfig);
 
-        const chatMessages = buildChatMessages(
-          messages,
-          aiConfig
-        );
+        const chatMessages = buildChatMessages(messages, aiConfig);
         const lastMsg = messages[messages.length - 1];
         const msgSource: MessageSource = lastMsg.messageSource || 'post';
         const response = await aiService.chatCompletion(
