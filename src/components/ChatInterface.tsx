@@ -636,13 +636,48 @@ const Introduction = ({ message }: { message: ChatMessage }) => {
             </div>
           </div>
 
+          {/* AI Configuration Section */}
+          <div className="mb-4 p-3 bg-gradient-to-r from-amber-50 to-yellow-50 rounded-xl border border-amber-200">
+            <h4 className="text-sm font-semibold text-neutral-700 mb-2 flex items-center gap-1">
+              ⚙️ AI配置说明
+            </h4>
+            <div className="space-y-2">
+              <div className="flex items-start gap-2">
+                <span className="w-5 h-5 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs mt-0.5">
+                  🤖
+                </span>
+                <div>
+                  <p className="text-xs text-neutral-700 font-medium">
+                    选择模型
+                  </p>
+                  <p className="text-xs text-neutral-600">
+                    支持ChatGPT, Claude, Gemeni, 通义千问, Kimi
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="w-5 h-5 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center text-xs mt-0.5">
+                  🔑
+                </span>
+                <div>
+                  <p className="text-xs text-neutral-700 font-medium">
+                    设置API Key
+                  </p>
+                  <p className="text-xs text-neutral-600">
+                    点击右上角设置按钮配置API密钥
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Call to Action */}
           <div className="text-center pt-3 border-t border-neutral-200">
             <p className="text-sm text-neutral-600 mb-2">
               ✨ 准备好开始创作了吗？
             </p>
             <p className="text-xs text-neutral-500">
-              上传图片或描述你的想法，让我帮你打造爆款内容！
+              配置好AI后，上传图片或描述你的想法，让我帮你打造爆款内容！
             </p>
           </div>
         </div>
