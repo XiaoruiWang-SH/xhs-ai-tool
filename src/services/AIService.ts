@@ -217,10 +217,10 @@ export class AIService {
 
         // 验证tool输入是否符合我们的schema
         if (validateContentResponse(toolInput, msgSource)) {
-          return {
+        return {
             content: JSON.stringify(toolInput),
             usage: response.usage,
-          };
+        };
         } else {
           throw new Error('Tool input validation failed');
         }
@@ -359,9 +359,9 @@ export class AIService {
 
         // 验证tool输入是否符合我们的schema
         if (validateContentResponse(toolInput, msgSource)) {
-          return {
+        return {
             content: JSON.stringify(toolInput),
-          };
+        };
         } else {
           throw new Error('Tool input validation failed');
         }
@@ -446,67 +446,48 @@ export class AIService {
           ? 'generate_xhs_comment'
           : 'generate_xhs_content';
 
-      messages.push({
+      const postInstructions = `你是一个专业的小红书内容创作专家。请根据用户提供的信息和图片，生成符合小红书风格的标题和内容。
+
+输出要求：严格按照JSON格式，包含title和content两个字符串字段。
+
+创作规则：
+1. 标题：吸引人、有点击欲望，不超过20个字符
+2. 内容：真实有用、亲切自然，适当使用表情符号和话题标签
+3. 语言风格：符合小红书用户喜好`;
+
+      const commentInstructions = `你是一个专业的小红书评论助手。请根据用户提供的笔记内容和图片，生成一条简短的、有趣的评论。
+
+输出要求：严格按照JSON格式，包含content一个字符串字段。
+
+评论规则：
+1. 语气：真诚自然、友好亲切，符合小红书社区氛围
+2. 长度：控制在100字以内，适当使用表情符号`;
+
+      messages.unshift({
         role: 'user',
         content: [
           {
             type: 'text',
             text:
-              msgSource === 'comment' ? commentSystemPrompt : postSystemPrompt,
+              msgSource === 'comment' ? commentInstructions : postInstructions,
           },
         ],
       });
 
       const response = (await this.openai.chat.completions.create({
-        model: 'qwen-vl-max', // 你现在的模型名
+        model: 'qwen-vl-plus', // 你现在的模型名
         // 强制文本产出（不需要工具时建议加上，避免无文本输出）
         // 注意：Responses API 里，input 是消息数组（role + content parts）
         // 如果你的 APIMessage 已经是正确结构就直接传；否则请在这里做适配
         messages: messages,
-        instructions:
-          msgSource === 'comment' ? commentSystemPrompt : postSystemPrompt,
-        tools: tools,
-        tool_choice: { type: 'function', function: { name: targetToolName } },
         enable_thinking: false,
+        response_format: {
+          type: 'json_object',
+        },
       } as ChatCompletionCreateParamsBase)) as ChatCompletion;
 
-      const tool_calls = response.choices[0].message.tool_calls;
-      if (
-        !tool_calls ||
-        !Array.isArray(tool_calls) ||
-        tool_calls.length === 0
-      ) {
-        throw new Error('Invalid response from chatgpt API');
-      }
-
-      // 查找tool_use内容
-      const contentItem = tool_calls.find(
-        (content) => content.type === 'function'
-      );
-
-      if (
-        contentItem?.function &&
-        contentItem?.function.name === targetToolName &&
-        contentItem?.function.arguments
-      ) {
-        let toolInput = {};
-        try {
-          toolInput = JSON.parse(contentItem.function.arguments) as {
-            title: string;
-            content: string;
-          };
-        } catch (error) {
-          console.error('OpenAI API parse failed:', error);
-        }
-
-        // 验证tool输入是否符合我们的schema
-        if (validateContentResponse(toolInput, msgSource)) {
-          return {
-            content: JSON.stringify(toolInput),
-          };
-        } else {
-          throw new Error('Tool input validation failed');
-        }
+      if (response.choices[0].message.content) {
+        return { content: response.choices[0].message.content };
       }
       return { content: '' };
     } catch (error) {
@@ -939,9 +920,7 @@ const postSystemPrompt = `你是一个专业的小红书内容创作专家，擅
 1. 标题要吸引人，有点击欲望，不超过20个字符
 2. 内容要有价值，可读性强，符合小红书用户喜好
 3. 适当使用表情符号和话题标签（#标签#）
-4. 语言风格要亲切自然，贴近用户
-5. 内容要真实有用，避免夸大宣传
-`;
+4. 语言风格要亲切自然，贴近用户`;
 
 // 小红书评论生成的系统提示词
 const commentSystemPrompt = `你是一个专业的小红书评论助手，擅长生成有趣、有价值的评论内容。
@@ -949,12 +928,9 @@ const commentSystemPrompt = `你是一个专业的小红书评论助手，擅长
 请根据用户提供的笔记图片和内容以及要求，生成一条简短的评论。
 
 要求：
-1. 评论要真诚自然，避免过于商业化
-2. 可以是赞美、提问、分享经验或表达共鸣
-3. 适当使用表情符号，让评论更生动
-4. 字数控制在100字以内
-5. 语气要友好亲切，符合小红书社区氛围
-6. 避免刷屏式的无意义评论
+1. 评论要真诚自然，符合小红书社区氛围
+2. 适当使用表情符号，让评论更生动
+3. 字数控制在100字以内
 `;
 
 /** 安全 JSON 解析：字符串→对象；对象原样返回；失败返回 null */
