@@ -60,9 +60,9 @@ const SettingsPanelComponent: React.FC<SettingsPanelProps> = ({ onClose }) => {
         </button>
 
         <div className="p-6">
-          <div>
+          {/* <div>
             model: {aiConfig.provider}, apiKey: {aiConfig.apiKey}
-          </div>
+          </div> */}
           {/* AI Model Configuration */}
           <section className="mb-6">
             <h3 className="text-lg font-semibold text-neutral-900 mb-4">
@@ -117,7 +117,7 @@ const SettingsPanelComponent: React.FC<SettingsPanelProps> = ({ onClose }) => {
             </div>
 
             {/* Test Connection */}
-            <div className="flex items-center gap-3 mb-4">
+            {/* <div className="flex items-center gap-3 mb-4">
               <button
                 onClick={testConnection}
                 disabled={!config.apiKey.trim() || isTestingConnection}
@@ -142,11 +142,11 @@ const SettingsPanelComponent: React.FC<SettingsPanelProps> = ({ onClose }) => {
                   )}
                 </div>
               )}
-            </div>
+            </div> */}
           </section>
 
           {/* Action Buttons */}
-          <div className="flex gap-3 pt-4 border-t border-neutral-200">
+          <div className="flex gap-3 pt-4 border-neutral-200">
             <button
               onClick={() => {
                 dispatch({ type: 'update', data: config });
