@@ -48,7 +48,7 @@
 ### 💻 方式二：开发者本地安装
 
 1. **下载插件包**
-   [安装包](./release/release.zip) https://github.com/XiaoruiWang-SH/xhs-ai-tool/raw/main/release/release.zip
+   点击下载 [安装包](https://github.com/XiaoruiWang-SH/xhs-ai-tool/raw/main/release/release.zip)
 
 2. **安装到 Chrome**
    - 打开 Chrome 浏览器
