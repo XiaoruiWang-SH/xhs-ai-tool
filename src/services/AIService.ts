@@ -458,7 +458,7 @@ export class AIService {
       });
 
       const response = (await this.openai.chat.completions.create({
-        model: 'qwen-vl-max-2025-04-08', // 你现在的模型名
+        model: 'qwen-vl-max', // 你现在的模型名
         // 强制文本产出（不需要工具时建议加上，避免无文本输出）
         // 注意：Responses API 里，input 是消息数组（role + content parts）
         // 如果你的 APIMessage 已经是正确结构就直接传；否则请在这里做适配
