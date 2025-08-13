@@ -22,6 +22,28 @@
 
 ![评论生成演示](./materials/comment_hq.gif)
 
+## 📦 快速安装
+
+### 🏪 方式一：Chrome 应用商店（推荐）
+
+1. 打开 [Chrome Web Store](https://chrome.google.com/webstore)
+2. 搜索 **"小红书 AI 小帮手"** 或 **"Xiaohongshu AI Assistant"**
+3. 点击 **"添加至 Chrome"** 完成安装
+4. 安装后图标会出现在浏览器工具栏
+
+### 💻 方式二：开发者本地安装
+
+1. **下载插件包**
+   点击下载 [安装包](https://github.com/XiaoruiWang-SH/xhs-ai-tool/raw/main/release/release.zip)
+
+2. **安装到 Chrome**
+   - 打开 Chrome 浏览器
+   - 地址栏输入 `chrome://extensions/`
+   - 右上角开启 **"开发者模式"**
+   - 点击 **"加载已解压的扩展程序"**
+   - 选择解压后的 `release` 文件夹（包含 manifest.json）
+   - 点击图标打开侧边栏开始使用
+
 ## 🚀 核心功能特色
 
 ### ✨ AI 智能内容生成
@@ -47,28 +69,6 @@
 - **本地存储**：API 密钥仅存储在本地浏览器，不上传服务器
 - **数据隐私**：图片和文本仅用于 AI 分析，不会被保存或分享
 - **合规使用**：完全遵守小红书平台使用条款和社区规范
-
-## 📦 快速安装
-
-### 🏪 方式一：Chrome 应用商店（推荐）
-
-1. 打开 [Chrome Web Store](https://chrome.google.com/webstore)
-2. 搜索 **"小红书 AI 小帮手"** 或 **"Xiaohongshu AI Assistant"**
-3. 点击 **"添加至 Chrome"** 完成安装
-4. 安装后图标会出现在浏览器工具栏
-
-### 💻 方式二：开发者本地安装
-
-1. **下载插件包**
-   点击下载 [安装包](https://github.com/XiaoruiWang-SH/xhs-ai-tool/raw/main/release/release.zip)
-
-2. **安装到 Chrome**
-   - 打开 Chrome 浏览器
-   - 地址栏输入 `chrome://extensions/`
-   - 右上角开启 **"开发者模式"**
-   - 点击 **"加载已解压的扩展程序"**
-   - 选择解压后的 `release` 文件夹（包含 manifest.json）
-   - 点击图标打开侧边栏开始使用
 
 ## 📖 详细使用教程
 
@@ -124,7 +124,7 @@
 - 💡 提出改进建议
 - 🐛 报告使用问题
 
-**免责声明**:
+### 免责声明:
 
 - 本工具仅供学习交流使用
 - 用户需自行承担使用风险
