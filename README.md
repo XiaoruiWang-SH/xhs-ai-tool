@@ -1,69 +1,202 @@
-# React + TypeScript + Vite
+# 🌺 小红书 AI 工具助手
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+一款专为小红书内容创作者打造的 Chrome 浏览器扩展，利用 AI大模型LLM 技术帮助您一键生成小红书文案和评论。
 
-Currently, two official plugins are available:
+## 🚀 产品特色
+- **AI内容优化**：基于采集的图片和内容生成更吸引人的标题和正文
+- **AI文案评论**：智能识别小红书文案的标题、内容和图片, 生成有趣、有价值的评论
+- **一键应用**：生成的内容可直接应用到小红书编辑页面
+- **大模型支持**：目前支持ChatGPT-5, claude-sonnet-4, QWen-3(通义千问)
+- **安全免费**：完全基于您本地设置的api key
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
-## Expanding the ESLint configuration
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 📦 安装指南
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### 开发版本安装
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+1. **克隆项目**
+   ```bash
+   git clone https://github.com/your-username/xhs-ai-tool.git
+   cd xhs-ai-tool
+   ```
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+2. **安装依赖**
+   ```bash
+   npm install
+   ```
+
+3. **构建扩展**
+   ```bash
+   npm run build
+   ```
+
+4. **加载到Chrome**
+   - 打开 Chrome 浏览器
+   - 访问 `chrome://extensions/`
+   - 开启"开发者模式"
+   - 点击"加载已解压的扩展程序"
+   - 选择项目中的 `dist` 文件夹
+
+### 发布版本安装
+*待Chrome Web Store上架后提供*
+
+## ⚙️ 配置指南
+
+### 1. API配置
+
+首次使用需要配置AI服务API：
+
+1. 点击扩展图标打开侧边栏
+2. 点击右上角的设置按钮 ⚙️
+3. 选择AI服务提供商
+4. 输入对应的API密钥
+
+#### OpenAI 配置
+- **提供商**：选择 "OpenAI ChatGPT"
+- **API Key**：从 [OpenAI官网](https://platform.openai.com/api-keys) 获取
+- **Base URL**：默认为官方地址，支持自定义
+
+#### Claude 配置
+- **提供商**：选择 "Anthropic Claude"
+- **API Key**：从 [Anthropic官网](https://console.anthropic.com/) 获取
+
+#### 通义千问配置
+- **提供商**：选择 "阿里通义千问"
+- **API Key**：从 [阿里云百炼平台](https://dashscope.aliyuncs.com/) 获取
+
+### 2. 权限设置
+
+扩展需要以下权限：
+- **activeTab**：读取当前标签页内容
+- **storage**：保存AI配置信息
+- **sidePanel**：显示侧边栏界面
+- **tabs**：管理标签页状态
+
+## 📖 使用说明
+
+### 内容创作模式
+
+1. **访问小红书编辑页面**
+   - 打开 [小红书](https://www.xiaohongshu.com)
+   - 点击"发布笔记"开始创作
+
+2. **启动AI助手**
+   - 点击浏览器工具栏中的扩展图标
+   - 侧边栏将自动打开
+
+3. **采集内容**
+   - 在编辑页面输入初步内容或上传图片
+   - 点击侧边栏中的"📥 采集内容"按钮
+   - 系统会自动识别页面中的文案和图片
+
+4. **生成优化内容**
+   - 查看采集到的内容预览
+   - 点击"✨ 生成小红书内容"
+   - 可以添加自定义要求或保持默认
+
+5. **应用到页面**
+   - 查看AI生成的标题和内容
+   - 点击"📋 应用到页面"将内容填充到编辑框
+   - 可以进一步手动调整
+
+### 评论生成模式
+
+1. **浏览小红书笔记**
+   - 打开任意小红书笔记页面
+
+2. **采集笔记内容**
+   - 点击"📥 采集内容"按钮
+   - 系统会自动识别笔记的图片和文案
+
+3. **生成评论**
+   - 点击"💬 生成小红书评论"
+   - 查看AI生成的评论建议
+   - 可以重新生成或手动编辑
+
+### 快捷操作
+
+- **🔄 重新生成**：对当前结果不满意时重新生成
+- **📋 复制内容**：快速复制生成的内容
+- **⚙️ 设置**：修改AI配置和偏好设置
+- **🧹 清空对话**：清除当前对话历史
+
+## 🛠️ 技术规格
+
+### 架构特点
+- **Manifest V3**：采用最新的Chrome扩展标准
+- **React + TypeScript**：现代化前端技术栈
+- **Vite构建**：快速开发和构建体验
+- **TailwindCSS**：美观的UI设计系统
+
+### 项目结构
+```
+xhs-ai-tool/
+├── src/
+│   ├── components/          # React组件
+│   │   ├── ChatInterface.tsx    # 聊天界面
+│   │   ├── SettingsPanel.tsx    # 设置面板
+│   │   └── Layout.tsx           # 布局组件
+│   ├── services/           # 服务层
+│   │   ├── AIService.ts         # AI服务封装
+│   │   ├── messageTypes.ts      # 消息类型定义
+│   │   └── messageHooks.ts      # 消息状态管理
+│   ├── content/            # 内容脚本
+│   │   └── main.ts              # 页面内容采集
+│   ├── service_worker.ts   # 后台服务
+│   └── utils/              # 工具函数
+├── manifest.config.ts      # 扩展配置
+├── vite.config.ts         # 构建配置
+└── package.json           # 项目依赖
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### 开发命令
+- `npm run dev`：启动开发服务器
+- `npm run build`：构建生产版本
+- `npm run lint`：代码质量检查
+- `npm run preview`：预览构建结果
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## ❓ 常见问题
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### Q: 为什么需要API密钥？
+A: 本扩展使用云端AI服务进行内容生成，需要有效的API密钥来调用相关服务。我们不会存储或泄露您的密钥信息。
+
+### Q: 支持哪些小红书页面？
+A: 目前支持小红书的内容编辑页面和笔记浏览页面，会持续扩展支持更多页面类型。
+
+### Q: 生成的内容可以直接发布吗？
+A: 建议将AI生成的内容作为灵感和参考，结合个人风格进行适当调整后再发布。
+
+### Q: 如何获得最佳使用效果？
+A: 建议上传清晰的图片，并提供详细的内容描述，这样AI能够生成更准确和相关的内容。
+
+## 🔒 隐私声明
+
+- 所有API密钥均存储在本地浏览器中
+- 不会收集或上传用户的个人信息
+- 图片和内容仅用于AI分析，不会被保存或分享
+- 完全遵守小红书平台的使用条款
+
+## 📄 开源协议
+
+本项目采用 MIT 开源协议，欢迎贡献代码和提出建议。
+
+## 🤝 贡献指南
+
+我们欢迎任何形式的贡献，包括但不限于：
+- 🐛 Bug报告
+- 💡 功能建议
+- 🔧 代码贡献
+- 📚 文档改进
+
+请通过 GitHub Issues 提交问题和建议。
+
+## 📞 联系方式
+
+如有任何问题或建议，欢迎通过以下方式联系：
+- GitHub Issues: [项目地址](https://github.com/your-username/xhs-ai-tool)
+- 邮箱: your-email@example.com
+
+---
+
+*让AI助力您的小红书内容创作之旅！* 🎉
