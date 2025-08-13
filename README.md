@@ -42,10 +42,8 @@
 
 ### 💻 方式二：开发者本地安装
 1. **下载插件包**
-   ```bash
-   # 下载发布版本
    [安装包](./release/release.zip) https://github.com/your-username/xhs-ai-tool/releases/latest/download/release.zip
-   ```
+   
 
 2. **安装到Chrome**
    - 打开Chrome浏览器
