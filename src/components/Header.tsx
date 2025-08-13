@@ -6,15 +6,12 @@ interface HeaderProps {
   onSettingsClick?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({
-  onSettingsClick,
-}) => {
-
+export const Header: React.FC<HeaderProps> = ({ onSettingsClick }) => {
   return (
     <div className="flex items-center justify-between px-3 bg-white border-b-[0.5px] border-b-gray-300">
       <div className="flex justify-between items-center gap-1.5">
         <img className="w-12 h-12" src={redNoteIcon} alt="red note icon" />
-        <div className='pt-[7px] text-gray-700'>AI小助手</div>
+        <div className="pt-[7px] text-gray-700">AI小帮手</div>
       </div>
 
       {onSettingsClick && (
@@ -26,7 +23,6 @@ export const Header: React.FC<HeaderProps> = ({
         >
           {/* <span className="text-xs">⚙️</span> */}
           <img className="w-4 h-4" src={settingIcon} alt="settings icon" />
-
         </button>
       )}
     </div>

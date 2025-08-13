@@ -88,7 +88,7 @@ domWatcher.watch('.post-page .title.setting', (element) => {
     return;
   }
 
-  // 创建AI助手按钮
+  // 创建AI帮手按钮
   const aiButton = createAIAssistantButton();
   aiButton.classList.add('ai-assistant-button');
 
@@ -134,13 +134,13 @@ domWatcher.watch(
       return;
     }
 
-    // 创建AI助手按钮
+    // 创建AI帮手按钮
     const aiButton = createAIAssistantButton();
     aiButton.classList.add('ai-assistant-button');
 
     // 添加点击事件
     aiButton.addEventListener('click', async () => {
-      console.log('AI助手按钮被点击');
+      console.log('AI帮手按钮被点击');
       // 检查是否处于禁用状态
       if (aiButton.dataset.disabled === 'true') {
         return;
@@ -560,7 +560,7 @@ function applyCommentContent(commentData: {
   }
 }
 
-// 创建AI助手按钮的函数
+// 创建AI帮手按钮的函数
 function createAIAssistantButton(): HTMLSpanElement {
   const button = document.createElement('span');
 

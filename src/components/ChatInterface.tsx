@@ -410,7 +410,7 @@ const AIResultDisplay: React.FC<{
           <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs">
             🤖
           </div>
-          <span className="text-micro text-neutral-500">小红书 AI 助手</span>
+          <span className="text-micro text-neutral-500">小红书 AI 帮手</span>
           <span className="text-micro text-neutral-500 ml-auto">
             {message.timestamp.toLocaleTimeString()}
           </span>
@@ -518,7 +518,7 @@ const Introduction = ({ message }: { message: ChatMessage }) => {
             🤖
           </div>
           <span className="text-micro text-neutral-600 font-medium">
-            小红书 AI 助手
+            小红书 AI 帮手
           </span>
           <span className="text-micro text-neutral-500 ml-auto">
             {message.timestamp.toLocaleTimeString()}
@@ -530,7 +530,7 @@ const Introduction = ({ message }: { message: ChatMessage }) => {
           {/* Header */}
           <div className="text-center mb-4">
             <h3 className="text-base font-semibold text-neutral-800 mb-1">
-              你好！👋 欢迎使用小红书AI助手
+              你好！👋 欢迎使用小红书AI帮手
             </h3>
             <p className="text-xs text-neutral-600">
               专业的创作工具，让你的小红书内容更出色
@@ -637,7 +637,7 @@ const Introduction = ({ message }: { message: ChatMessage }) => {
           </div>
 
           {/* AI Configuration Section */}
-          <div className="mb-4 p-3 bg-gradient-to-r from-amber-50 to-yellow-50 rounded-xl border border-amber-200">
+          {/* <div className="mb-4 p-3 bg-gradient-to-r from-amber-50 to-yellow-50 rounded-xl border border-amber-200">
             <h4 className="text-sm font-semibold text-neutral-700 mb-2 flex items-center gap-1">
               ⚙️ AI配置说明
             </h4>
@@ -669,7 +669,7 @@ const Introduction = ({ message }: { message: ChatMessage }) => {
                 </div>
               </div>
             </div>
-          </div>
+          </div> */}
 
           {/* Call to Action */}
           <div className="text-center pt-3 border-t border-neutral-200">

@@ -2,7 +2,7 @@ import { defineManifest } from '@crxjs/vite-plugin';
 
 export default defineManifest({
   manifest_version: 3,
-  name: '小红书AI工具助手',
+  name: '小红书AI小帮手',
   version: '1.0.0',
   action: {
     // default_popup: "index.html",

@@ -38,7 +38,7 @@ chrome.tabs.onUpdated.addListener(
       isXiaohongshuPage(tab.url)
     ) {
       // 根据不同网站更新扩展图标标题
-      const title = '打开小红书AI助手';
+      const title = '打开小红书AI帮手';
       chrome.action.setTitle({
         tabId: tabId,
         title: title,
