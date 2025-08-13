@@ -1,224 +1,119 @@
-# 🌺 小红书 AI 工具小帮手
+# 🌺 小红书 AI 工具小帮手 | Xiaohongshu AI Content Assistant
 
-一款专为小红书内容创作者打造的 Chrome 浏览器扩展，利用 AI 大模型 LLM 技术帮助您一键生成小红书文案和评论。
+[![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-4285f4?style=flat-square&logo=google-chrome)](https://chrome.google.com/webstore)
+[![Version](https://img.shields.io/badge/version-1.0.0-brightgreen?style=flat-square)](https://github.com/your-username/xhs-ai-tool)
+[![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-20232A?style=flat-square&logo=react&logoColor=61DAFB)](https://reactjs.org/)
 
-## 🚀 产品特色
+> **专业的小红书内容创作AI助手** - 一款功能强大的Chrome浏览器扩展，专为小红书(Xiaohongshu)内容创作者设计。集成OpenAI GPT、Claude、通义千问等主流AI大模型，智能生成高质量文案、标题和评论，提升内容创作效率。
 
-- **AI 内容优化**：基于采集的图片和内容生成更吸引人的标题和正文
-- **AI 文案评论**：智能识别小红书文案的标题、内容和图片, 生成有趣、有价值的评论
-- **一键应用**：生成的内容可直接应用到小红书编辑页面
-- **大模型支持**：目前支持 ChatGPT-5, claude-sonnet-4, QWen-3(通义千问)
-- **安全免费**：完全基于您本地设置的 api key
+**关键词**: 小红书, AI文案生成, Chrome扩展, 内容创作, 智能写作, GPT, Claude, 通义千问, 社交媒体工具
 
-## 📦 安装指南
+## 🚀 核心功能特色
 
-### 开发版本安装
+### ✨ AI智能内容生成
+- **📝 智能文案创作**：基于图片内容和用户输入，自动生成吸引眼球的小红书标题和正文
+- **💬 AI评论助手**：智能分析小红书笔记内容，生成个性化、有价值的互动评论
+- **🎯 内容优化建议**：提供SEO友好的标题优化和内容结构建议
 
-1. **克隆项目**
+### ⚡ 高效操作体验  
+- **🔄 一键应用**：AI生成内容可直接插入小红书编辑页面，无需复制粘贴
+- **📱 侧边栏集成**：Chrome侧边栏设计，不干扰原有浏览体验
+- **⚙️ 自定义模板**：支持个性化提示词模板，适配不同创作风格
 
+### 🤖 多模型AI支持
+- **OpenAI GPT系列**：支持GPT-5，专业文案生成
+- **Claude Sonnet**：Anthropic Claude-4模型，擅长创意内容创作  
+- **通义千问**：阿里云Qwen模型，中文内容优化专家
+
+### 🔒 隐私安全保障
+- **本地存储**：API密钥仅存储在本地浏览器，不上传服务器
+- **数据隐私**：图片和文本仅用于AI分析，不会被保存或分享
+- **合规使用**：完全遵守小红书平台使用条款和社区规范
+
+## 📦 快速安装
+
+### 🏪 方式一：Chrome应用商店（推荐）
+1. 打开 [Chrome Web Store](https://chrome.google.com/webstore)
+2. 搜索 **"小红书AI小帮手"** 或 **"Xiaohongshu AI Assistant"**
+3. 点击 **"添加至Chrome"** 完成安装
+4. 安装后图标会出现在浏览器工具栏
+
+### 💻 方式二：开发者本地安装
+1. **下载插件包**
    ```bash
-   git clone https://github.com/your-username/xhs-ai-tool.git
-   cd xhs-ai-tool
+   # 下载发布版本
+   [安装包](./release/release.zip) https://github.com/your-username/xhs-ai-tool/releases/latest/download/release.zip
    ```
 
-2. **安装依赖**
+2. **安装到Chrome**
+   - 打开Chrome浏览器
+   - 地址栏输入 `chrome://extensions/`
+   - 右上角开启 **"开发者模式"**
+   - 点击 **"加载已解压的扩展程序"**
+   - 选择解压后的 `release` 文件夹（包含manifest.json）
+   - 点击图标打开侧边栏开始使用
 
-   ```bash
-   npm install
-   ```
 
-3. **构建扩展**
+## 📖 详细使用教程
 
-   ```bash
-   npm run build
-   ```
+### 🔧 首次配置
+1. **打开设置面板**
+   - 点击浏览器工具栏的 ⚙️ 图标
+   - 选择大模型
+   - 输入api key
 
-4. **加载到 Chrome**
-   - 打开 Chrome 浏览器
-   - 访问 `chrome://extensions/`
-   - 开启"开发者模式"
-   - 点击"加载已解压的扩展程序"
-   - 选择项目中的 `dist` 文件夹
+2. **保存**
 
-### 发布版本安装
-
-_待 Chrome Web Store 上架后提供_
-
-## ⚙️ 配置指南
-
-### 1. API 配置
-
-首次使用需要配置 AI 服务 API：
-
-1. 点击扩展图标打开侧边栏
-2. 点击右上角的设置按钮 ⚙️
-3. 选择 AI 服务提供商
-4. 输入对应的 API 密钥
-
-#### OpenAI 配置
-
-- **提供商**：选择 "OpenAI ChatGPT"
-- **API Key**：从 [OpenAI 官网](https://platform.openai.com/api-keys) 获取
-- **Base URL**：默认为官方地址，支持自定义
-
-#### Claude 配置
-
-- **提供商**：选择 "Anthropic Claude"
-- **API Key**：从 [Anthropic 官网](https://console.anthropic.com/) 获取
-
-#### 通义千问配置
-
-- **提供商**：选择 "阿里通义千问"
-- **API Key**：从 [阿里云百炼平台](https://dashscope.aliyuncs.com/) 获取
-
-### 2. 权限设置
-
-扩展需要以下权限：
-
-- **activeTab**：读取当前标签页内容
-- **storage**：保存 AI 配置信息
-- **sidePanel**：显示侧边栏界面
-- **tabs**：管理标签页状态
-
-## 📖 使用说明
-
-### 内容创作模式
-
-1. **访问小红书编辑页面**
-
-   - 打开 [小红书](https://www.xiaohongshu.com)
+### ✍️ 智能文案生成
+1. **访问小红书创作页面**
+   - 打开 [小红书](https://www.xiaohongshu.com) 并登录
    - 点击"发布笔记"开始创作
 
-2. **启动 AI 帮手**
+2. **上传图片并生成文案**
+   - 上传您的图片到小红书编辑器
+   - 点击🌺扩展图标打开AI助手
+   - 选择合适的文案模板（如：种草推荐、生活分享、美食评测等）
+   - 点击"生成文案"等待AI创作
+   - 一键应用生成的标题和正文
 
-   - 点击浏览器工具栏中的扩展图标
-   - 侧边栏将自动打开
+3. **自定义优化**
+   - 可以修改AI提示词模板
+   - 支持指定文案风格和长度
+   - 批量生成多个版本供选择
 
-3. **采集内容**
-
-   - 在编辑页面输入初步内容或上传图片
-   - 点击侧边栏中的"📥 采集内容"按钮
-   - 系统会自动识别页面中的文案和图片
-
-4. **生成优化内容**
-
-   - 查看采集到的内容预览
-   - 点击"✨ 生成小红书内容"
-   - 可以添加自定义要求或保持默认
-
-5. **应用到页面**
-   - 查看 AI 生成的标题和内容
-   - 点击"📋 应用到页面"将内容填充到编辑框
-   - 可以进一步手动调整
-
-### 评论生成模式
-
-1. **浏览小红书笔记**
-
+### 💬 智能评论助手
+1. **浏览小红书内容**
    - 打开任意小红书笔记页面
+   - AI会自动识别页面内容（标题、图片、正文）
 
-2. **采集笔记内容**
+2. **生成个性化评论**
+   - 在侧边栏中查看内容概览
+   - 选择评论风格（友好互动、专业建议、幽默搞笑等）
+   - 点击"生成评论"获得AI建议
+   - 复制或直接插入评论区
 
-   - 点击"📥 采集内容"按钮
-   - 系统会自动识别笔记的图片和文案
+### 📺 视频演示
+- **📝 文案生成演示**: [观看视频](./materials/postNote.mov)
+- **⚙️ 自定义设置**: [观看视频](./materials/custom.mov)  
+- **💬 评论生成演示**: [观看视频](./materials/comment.mov)
 
-3. **生成评论**
-   - 点击"💬 生成小红书评论"
-   - 查看 AI 生成的评论建议
-   - 可以重新生成或手动编辑
+### 🌟 支持项目
+如果这个项目对您有帮助，请考虑：
+- ⭐ 给项目点个Star
+- 🔄 分享给更多朋友
+- 💡 提出改进建议
+- 🐛 报告使用问题
 
-### 快捷操作
 
-- **🔄 重新生成**：对当前结果不满意时重新生成
-- **📋 复制内容**：快速复制生成的内容
-- **⚙️ 设置**：修改 AI 配置和偏好设置
-- **🧹 清空对话**：清除当前对话历史
-
-## 🛠️ 技术规格
-
-### 架构特点
-
-- **Manifest V3**：采用最新的 Chrome 扩展标准
-- **React + TypeScript**：现代化前端技术栈
-- **Vite 构建**：快速开发和构建体验
-- **TailwindCSS**：美观的 UI 设计系统
-
-### 项目结构
-
-```
-xhs-ai-tool/
-├── src/
-│   ├── components/          # React组件
-│   │   ├── ChatInterface.tsx    # 聊天界面
-│   │   ├── SettingsPanel.tsx    # 设置面板
-│   │   └── Layout.tsx           # 布局组件
-│   ├── services/           # 服务层
-│   │   ├── AIService.ts         # AI服务封装
-│   │   ├── messageTypes.ts      # 消息类型定义
-│   │   └── messageHooks.ts      # 消息状态管理
-│   ├── content/            # 内容脚本
-│   │   └── main.ts              # 页面内容采集
-│   ├── service_worker.ts   # 后台服务
-│   └── utils/              # 工具函数
-├── manifest.config.ts      # 扩展配置
-├── vite.config.ts         # 构建配置
-└── package.json           # 项目依赖
-```
-
-### 开发命令
-
-- `npm run dev`：启动开发服务器
-- `npm run build`：构建生产版本
-- `npm run lint`：代码质量检查
-- `npm run preview`：预览构建结果
-
-## ❓ 常见问题
-
-### Q: 为什么需要 API 密钥？
-
-A: 本扩展使用云端 AI 服务进行内容生成，需要有效的 API 密钥来调用相关服务。我们不会存储或泄露您的密钥信息。
-
-### Q: 支持哪些小红书页面？
-
-A: 目前支持小红书的内容编辑页面和笔记浏览页面，会持续扩展支持更多页面类型。
-
-### Q: 生成的内容可以直接发布吗？
-
-A: 建议将 AI 生成的内容作为灵感和参考，结合个人风格进行适当调整后再发布。
-
-### Q: 如何获得最佳使用效果？
-
-A: 建议上传清晰的图片，并提供详细的内容描述，这样 AI 能够生成更准确和相关的内容。
-
-## 🔒 隐私声明
-
-- 所有 API 密钥均存储在本地浏览器中
-- 不会收集或上传用户的个人信息
-- 图片和内容仅用于 AI 分析，不会被保存或分享
-- 完全遵守小红书平台的使用条款
-
-## 📄 开源协议
-
-本项目采用 MIT 开源协议，欢迎贡献代码和提出建议。
-
-## 🤝 贡献指南
-
-我们欢迎任何形式的贡献，包括但不限于：
-
-- 🐛 Bug 报告
-- 💡 功能建议
-- 🔧 代码贡献
-- 📚 文档改进
-
-请通过 GitHub Issues 提交问题和建议。
-
-## 📞 联系方式
-
-如有任何问题或建议，欢迎通过以下方式联系：
-
-- GitHub Issues: [项目地址](https://github.com/your-username/xhs-ai-tool)
-- 邮箱: your-email@example.com
+**免责声明**: 
+- 本工具仅供学习交流使用
+- 用户需自行承担使用风险
+- 请遵守相关平台服务条款
+- 生成内容的真实性由用户负责
 
 ---
 
-_让 AI 助力您的小红书内容创作之旅！_ 🎉
+
+
