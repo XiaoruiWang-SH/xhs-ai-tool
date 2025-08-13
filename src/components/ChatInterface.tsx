@@ -677,7 +677,7 @@ const Introduction = ({ message }: { message: ChatMessage }) => {
               ✨ 准备好开始创作了吗？
             </p>
             <p className="text-xs text-neutral-500">
-              配置好AI后，上传图片或描述你的想法，让我帮你打造爆款内容！
+              上传图片或描述你的想法，让我帮你打造爆款内容！
             </p>
           </div>
         </div>
