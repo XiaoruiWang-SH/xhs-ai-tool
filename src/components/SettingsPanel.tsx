@@ -2,7 +2,7 @@ import React, { useState, useEffect, memo } from 'react';
 import { useAIConfig, useAIConfigDispatch } from '../services/aiConfigHooks';
 
 export interface AIConfig {
-  provider: 'chatgpt' | 'claude' | 'gemini' | 'tongyi' | 'kimi';
+  provider: 'chatgpt' | 'claude' | 'gemini' | 'qwen' | 'kimi';
   apiKey: string;
 }
 
@@ -85,7 +85,7 @@ const SettingsPanelComponent: React.FC<SettingsPanelProps> = ({ onClose }) => {
                 <option value="chatgpt">ChatGPT</option>
                 <option value="claude">Claude</option>
                 <option value="gemini">Gemini</option>
-                <option value="tongyi">通义千问</option>
+                <option value="qwen">通义千问</option>
                 <option value="kimi">Kimi</option>
               </select>
             </div>

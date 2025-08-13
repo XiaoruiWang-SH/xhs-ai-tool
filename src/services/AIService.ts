@@ -6,6 +6,10 @@ import type {
   ResponseCreateParamsBase,
   FunctionTool,
 } from 'openai/resources/responses/responses.mjs';
+import type {
+  ChatCompletionCreateParamsBase,
+  ChatCompletion,
+} from 'openai/resources/chat/completions.mjs';
 
 // API message format for OpenAI/Claude
 export interface APIMessage {
@@ -81,6 +85,14 @@ export class AIService {
           dangerouslyAllowBrowser: true,
         });
         console.log('OpenAI client initialized');
+      } else if (this.config.provider === 'qwen') {
+        // Default to OpenAI
+        this.openai = new OpenAI({
+          apiKey: this.config.apiKey,
+          baseURL: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+          dangerouslyAllowBrowser: true,
+        });
+        console.log('OpenAI client initialized');
       }
     } catch (error) {
       console.error('Failed to initialize AI client:', error);
@@ -96,6 +108,8 @@ export class AIService {
       return this.claudeChatCompletion(messages, msgSource);
     } else if (this.config.provider === 'chatgpt') {
       return this.openaiChatCompletion(messages, msgSource);
+    } else if (this.config.provider === 'qwen') {
+      return this.qwenChatCompletion(messages, msgSource);
     }
     return Promise.reject(new Error('Unsupported AI provider'));
   }
@@ -359,6 +373,148 @@ export class AIService {
     }
   }
 
+  private async qwenChatCompletion(
+    messages: APIMessage[],
+    msgSource: MessageSource
+  ): Promise<AIResponse> {
+    if (!this.openai) {
+      throw new Error(
+        'OpenAI client not initialized. Please check your API key.'
+      );
+    }
+
+    // 定义Tools来强制OpenAI返回JSON格式
+    const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
+      {
+        type: 'function',
+        function: {
+          name: 'generate_xhs_content',
+          description: '生成小红书内容，包括标题和内容',
+          strict: true,
+          parameters: {
+            type: 'object',
+            additionalProperties: false,
+            properties: {
+              title: {
+                type: 'string',
+                maxLength: 20,
+                description:
+                  '优化后的标题，要吸引人、有点击欲望，符合小红书风格，不超过20个字符',
+              },
+              content: {
+                type: 'string',
+                maxLength: 1000,
+                description:
+                  '优化后的完整内容，可包含表情符号、话题标签、换行等，不超过1000个字符',
+              },
+            },
+            required: ['title', 'content'],
+          },
+        },
+      },
+      {
+        type: 'function',
+        function: {
+          name: 'generate_xhs_comment',
+          description: '生成小红书笔记评论',
+          strict: true,
+          parameters: {
+            type: 'object',
+            additionalProperties: false,
+            properties: {
+              content: {
+                type: 'string',
+                maxLength: 100,
+                description:
+                  '生成的小红书笔记评论，可包含表情符号，不超过100个字符',
+              },
+            },
+            required: ['content'],
+          },
+        },
+      },
+    ];
+
+    try {
+      const schema =
+        msgSource === 'post' ? XHS_CONTENT_SCHEMA : XHS_COMMENT_SCHEMA;
+      const schemaName = msgSource === 'post' ? 'xhs_content' : 'xhs_comment';
+      const schemaDescription =
+        msgSource === 'post' ? '小红书内容生成格式' : '小红书评论生成格式';
+      const targetToolName =
+        msgSource === 'comment'
+          ? 'generate_xhs_comment'
+          : 'generate_xhs_content';
+
+      messages.push({
+        role: 'user',
+        content: [
+          {
+            type: 'text',
+            text:
+              msgSource === 'comment' ? commentSystemPrompt : postSystemPrompt,
+          },
+        ],
+      });
+
+      const response = (await this.openai.chat.completions.create({
+        model: 'qwen-vl-max-2025-04-08', // 你现在的模型名
+        // 强制文本产出（不需要工具时建议加上，避免无文本输出）
+        // 注意：Responses API 里，input 是消息数组（role + content parts）
+        // 如果你的 APIMessage 已经是正确结构就直接传；否则请在这里做适配
+        messages: messages,
+        instructions:
+          msgSource === 'comment' ? commentSystemPrompt : postSystemPrompt,
+        tools: tools,
+        tool_choice: { type: 'function', function: { name: targetToolName } },
+        enable_thinking: false,
+      } as ChatCompletionCreateParamsBase)) as ChatCompletion;
+
+      const tool_calls = response.choices[0].message.tool_calls;
+      if (
+        !tool_calls ||
+        !Array.isArray(tool_calls) ||
+        tool_calls.length === 0
+      ) {
+        throw new Error('Invalid response from chatgpt API');
+      }
+
+      // 查找tool_use内容
+      const contentItem = tool_calls.find(
+        (content) => content.type === 'function'
+      );
+
+      if (
+        contentItem?.function &&
+        contentItem?.function.name === targetToolName &&
+        contentItem?.function.arguments
+      ) {
+        let toolInput = {};
+        try {
+          toolInput = JSON.parse(contentItem.function.arguments) as {
+            title: string;
+            content: string;
+          };
+        } catch (error) {
+          console.error('OpenAI API parse failed:', error);
+        }
+
+        // 验证tool输入是否符合我们的schema
+        if (validateContentResponse(toolInput, msgSource)) {
+          return {
+            content: JSON.stringify(toolInput),
+          };
+        } else {
+          throw new Error('Tool input validation failed');
+        }
+      }
+      return { content: '' };
+    } catch (error) {
+      console.error('OpenAI API call failed:', error);
+      return this.handleAPIError(error, 'OpenAI');
+    }
+  }
+
   private handleAPIError(error: any, provider: string): never {
     // 更友好的错误处理
     if (error instanceof Error) {
@@ -411,6 +567,8 @@ export function buildChatMessages(
     return buildClaudeChatMessages(data);
   } else if (aiConfig.provider === 'chatgpt') {
     return buildChatgptChatMessages(data);
+  } else if (aiConfig.provider === 'qwen') {
+    return buildQwenChatMessages(data);
   }
   return buildChatgptChatMessages(data);
 }
@@ -644,6 +802,111 @@ function buildChatgptChatMessages(data: ChatMessage[]): APIMessage[] {
   return messages;
 }
 
+function buildQwenChatMessages(data: ChatMessage[]): APIMessage[] {
+  const messages: APIMessage[] = [];
+
+  // 添加完整的对话历史，只区分user和assistant
+  const totalNumMsgs = data.length;
+  const userfulMessages = data.filter((msg, index) => {
+    if (
+      totalNumMsgs > 6 &&
+      index !== 0 &&
+      index !== 1 &&
+      index !== totalNumMsgs - 1 &&
+      index !== totalNumMsgs - 2 &&
+      index !== totalNumMsgs - 3
+    )
+      return false;
+    return msg.sender === 'user' || msg.sender === 'assistant';
+  });
+
+  userfulMessages.forEach((msg) => {
+    const role: 'user' | 'assistant' =
+      msg.sender === 'user' ? 'user' : 'assistant';
+    const content: any[] = [];
+
+    // Handle user messages with uploaded images
+    if (msg.sender === 'user' && msg.userMessage) {
+      // Add user uploaded images
+      if (msg.userMessage.images && msg.userMessage.images.length > 0) {
+        const imageObjects = msg.userMessage.images.map((img) => {
+          return {
+            type: 'image_url',
+            image_url: img,
+          };
+        });
+        content.push(...imageObjects);
+      }
+
+      // Add user text content
+      const textContent = {
+        type: 'text',
+        text: msg.userMessage.content,
+      };
+      content.push(textContent);
+    } else if (msg.type === 'collected' && msg.collectedData) {
+      const imgs = msg.collectedData.images || [];
+      if (imgs.length > 0) {
+        const imageObjects = imgs.map((img) => {
+          return {
+            type: 'image_url',
+            image_url: img,
+          };
+        });
+        content.push(...imageObjects);
+      }
+      const contentObjTitle = {
+        type: 'text',
+        text: `小红书文案标题: ${msg.collectedData.title}`,
+      };
+      content.push(contentObjTitle);
+      const contentObjContent = {
+        type: 'text',
+        text: `小红书文案内容: ${msg.collectedData.content}`,
+      };
+      content.push(contentObjContent);
+    } else if (msg.type === 'result' && msg.generatedPostData) {
+      const aiContentObjTitle = {
+        type: 'text',
+        text: `AI生成的小红书文案标题: ${msg.generatedPostData.title}`,
+      };
+      content.push(aiContentObjTitle);
+      const aiContentObjContent = {
+        type: 'text',
+        text: `AI生成的小红书文案内容: ${msg.generatedPostData.content}`,
+      };
+      content.push(aiContentObjContent);
+    } else if (msg.type === 'result' && msg.generatedCommentData) {
+      const aiContentObjComment = {
+        type: 'text',
+        text: `AI生成的小红书评论内容: ${msg.generatedCommentData.content}`,
+      };
+      content.push(aiContentObjComment);
+    } else {
+      let contentObj = {};
+      if (msg.sender === 'user') {
+        contentObj = {
+          type: 'text',
+          text: msg.content || '',
+        };
+      } else {
+        contentObj = {
+          type: 'text',
+          text: msg.content || '',
+        };
+      }
+
+      content.push(contentObj);
+    }
+
+    messages.push({
+      role,
+      content: content,
+    });
+  });
+  return messages;
+}
+
 // 验证响应是否符合Schema
 export function validateContentResponse(
   response: any,
@@ -670,7 +933,7 @@ export function validateContentResponse(
 // 小红书内容生成的系统提示词
 const postSystemPrompt = `你是一个专业的小红书内容创作专家，擅长创作吸引人的标题和内容。
 
-请根据用户提供的内容和要求，生成符合小红书风格的标题和正文内容。
+请根据用户提供的图片和内容以及要求，生成符合小红书风格的标题和正文内容。
 
 要求：
 1. 标题要吸引人，有点击欲望，不超过20个字符
@@ -683,7 +946,7 @@ const postSystemPrompt = `你是一个专业的小红书内容创作专家，擅
 // 小红书评论生成的系统提示词
 const commentSystemPrompt = `你是一个专业的小红书评论助手，擅长生成有趣、有价值的评论内容。
 
-请根据用户提供的笔记内容，生成一条简短的评论。
+请根据用户提供的笔记图片和内容以及要求，生成一条简短的评论。
 
 要求：
 1. 评论要真诚自然，避免过于商业化
@@ -692,13 +955,6 @@ const commentSystemPrompt = `你是一个专业的小红书评论助手，擅长
 4. 字数控制在100字以内
 5. 语气要友好亲切，符合小红书社区氛围
 6. 避免刷屏式的无意义评论
-
-评论类型可以是：
-- 赞美型：夸赞内容的优点和价值
-- 互动型：提出有趣的问题促进讨论
-- 经验型：分享相关的个人经验或建议  
-- 共鸣型：表达对内容的认同和共鸣
-- 幽默型：以轻松幽默的方式回应
 `;
 
 /** 安全 JSON 解析：字符串→对象；对象原样返回；失败返回 null */
