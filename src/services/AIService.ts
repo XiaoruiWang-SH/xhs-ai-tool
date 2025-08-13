@@ -67,6 +67,8 @@ export class AIService {
     this.config = config;
     if (config.apiKey) {
       this.initializeClient();
+    } else {
+      throw new Error('请设置⚙️您的AI大模型和api key');
     }
   }
 
@@ -217,10 +219,10 @@ export class AIService {
 
         // 验证tool输入是否符合我们的schema
         if (validateContentResponse(toolInput, msgSource)) {
-        return {
+          return {
             content: JSON.stringify(toolInput),
             usage: response.usage,
-        };
+          };
         } else {
           throw new Error('Tool input validation failed');
         }
@@ -359,9 +361,9 @@ export class AIService {
 
         // 验证tool输入是否符合我们的schema
         if (validateContentResponse(toolInput, msgSource)) {
-        return {
+          return {
             content: JSON.stringify(toolInput),
-        };
+          };
         } else {
           throw new Error('Tool input validation failed');
         }

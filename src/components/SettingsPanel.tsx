@@ -84,9 +84,7 @@ const SettingsPanelComponent: React.FC<SettingsPanelProps> = ({ onClose }) => {
               >
                 <option value="chatgpt">ChatGPT</option>
                 <option value="claude">Claude</option>
-                <option value="gemini">Gemini</option>
                 <option value="qwen">通义千问</option>
-                <option value="kimi">Kimi</option>
               </select>
             </div>
           </section>
