@@ -105,9 +105,23 @@
 
 ### 📺 视频演示
 
-- **📝 文案生成演示**: [观看视频](./materials/postNote.mov)
-- **⚙️ 自定义设置**: [观看视频](./materials/custom.mov)
-- **💬 评论生成演示**: [观看视频](./materials/comment.mov)
+#### 📝 文案生成演示
+<video width="600" controls>
+  <source src="./materials/postNote.mov" type="video/quicktime">
+  您的浏览器不支持 HTML5 视频标签。[点击下载视频](./materials/postNote.mov)
+</video>
+
+#### ⚙️ 自定义设置
+<video width="600" controls>
+  <source src="./materials/custom.mov" type="video/quicktime">
+  您的浏览器不支持 HTML5 视频标签。[点击下载视频](./materials/custom.mov)
+</video>
+
+#### 💬 评论生成演示
+<video width="600" controls>
+  <source src="./materials/comment.mov" type="video/quicktime">
+  您的浏览器不支持 HTML5 视频标签。[点击下载视频](./materials/comment.mov)
+</video>
 
 ### 🌟 支持项目
 
