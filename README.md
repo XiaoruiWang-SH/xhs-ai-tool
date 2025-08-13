@@ -1,4 +1,4 @@
-# 🌺 小红书 AI 工具小帮手 | Xiaohongshu AI Content Assistant
+# 小红书 AI 工具小帮手 | Xiaohongshu AI Content Assistant
 
 [![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-4285f4?style=flat-square&logo=google-chrome)](https://chrome.google.com/webstore)
 [![Version](https://img.shields.io/badge/version-1.0.0-brightgreen?style=flat-square)](https://github.com/your-username/xhs-ai-tool)
