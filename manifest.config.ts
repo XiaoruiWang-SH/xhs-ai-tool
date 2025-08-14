@@ -27,7 +27,6 @@ export default defineManifest({
     default_path: 'index.html',
   },
   permissions: ['sidePanel', 'activeTab', 'storage', 'tabs'],
-  host_permissions: ['https://*.xiaohongshu.com/*'],
   background: {
     service_worker: 'src/service_worker.ts',
   },
