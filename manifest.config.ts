@@ -33,7 +33,11 @@ export default defineManifest({
   content_scripts: [
     {
       js: ['src/content/main.ts'],
-      matches: ['https://*.xiaohongshu.com/*'],
+      matches: [
+        'https://creator.xiaohongshu.com/publish/*',
+        'https://www.xiaohongshu.com/explore/*',
+      ],
+      run_at: 'document_idle',
     },
   ],
 });
