@@ -10,6 +10,8 @@
 
 **关键词**: 小红书, AI 文案生成, Chrome 扩展, 内容创作, 智能写作, GPT, Claude, 通义千问, 社交媒体工具
 
+📖 **中文文档** | 🌐 **[English Documentation](./README_EN.md)**
+
 ### 📺 功能演示
 
 #### 📝 文案生成演示
