@@ -1,124 +1,124 @@
-# 小红书 AI 小帮手 - 隐私政策
+# Xiaohongshu AI Assistant - Privacy Policy
 
-最后更新：2025 年 8 月 14 日
+Last Updated: August 14, 2025
 
-📖 **中文版本** | 🌐 **[English Version](./PRIVACY_POLICY_EN.md)**
+📖 **[中文版本](https://github.com/XiaoruiWang-SH/xhs-ai-tool/raw/main/PRIVACY_POLICY_CN.md)** | 🌐 **English Version**
 
-## 概述
+## Overview
 
-小红书 AI 小帮手（以下简称"本扩展"）致力于保护用户隐私。本隐私政策说明我们如何收集、使用和保护您的信息。
+Xiaohongshu AI Assistant (hereinafter referred to as "this extension") is committed to protecting user privacy. This privacy policy explains how we collect, use, and protect your information.
 
-## 信息收集
+## Information Collection
 
-### 我们收集的信息
+### Information We Collect
 
-- **页面内容**：仅在您主动使用 AI 功能时，临时读取小红书页面的标题、文本内容和图片
-- **用户配置**：AI 服务配置信息（API 密钥等），存储在 Chrome 浏览器本地存储中
-- **使用数据**：不收集任何使用统计或分析数据
+- **Page Content**: Only when you actively use AI features, we temporarily read titles, text content, and images from Xiaohongshu pages
+- **User Configuration**: AI service configuration information (API keys, etc.), stored in Chrome browser local storage
+- **Usage Data**: We do not collect any usage statistics or analytics data
 
-### 我们不收集的信息
+### Information We Do Not Collect
 
-- 个人身份信息
-- 浏览历史
-- 账户凭据
-- 设备信息
-- 位置信息
+- Personal identification information
+- Browsing history
+- Account credentials
+- Device information
+- Location information
 
-## 数据使用
+## Data Usage
 
-### 数据处理方式
+### Data Processing Methods
 
-- **本地处理**：所有数据处理均在您的设备本地进行
-- **临时性**：页面内容仅在 AI 处理过程中临时使用，不存储
-- **用户控制**：您完全控制何时使用 AI 功能和数据处理
+- **Local Processing**: All data processing occurs locally on your device
+- **Temporary**: Page content is only used temporarily during AI processing and is not stored
+- **User Control**: You have complete control over when to use AI features and data processing
 
-### AI 服务集成
+### AI Service Integration
 
-- 仅在您主动请求时，将内容发送至您配置的 AI 服务（OpenAI 或 Anthropic Claude）
-- 遵循相应 AI 服务提供商的隐私政策
-- 不存储 AI 服务的响应内容
+- Content is sent to your configured AI service (OpenAI or Anthropic Claude) only when you actively request it
+- Complies with the privacy policies of respective AI service providers
+- Does not store AI service response content
 
-## 权限说明
+## Permissions Explanation
 
-### 主机权限
+### Host Permissions
 
-- **小红书域名访问**：`https://creator.xiaohongshu.com/*` 和 `https://www.xiaohongshu.com/*`
-- **用途**：读取页面元素，提供 AI 创作辅助功能
-- **限制**：仅在用户主动使用扩展功能时访问
+- **Xiaohongshu Domain Access**: `https://creator.xiaohongshu.com/*` and `https://www.xiaohongshu.com/*`
+- **Purpose**: Read page elements to provide AI creative assistance features
+- **Limitation**: Only access when user actively uses extension features
 
-### Chrome 扩展权限
+### Chrome Extension Permissions
 
-- **sidePanel**：显示扩展界面
-- **activeTab**：获取当前标签页信息
-- **storage**：本地存储用户配置
-- **tabs**：管理标签页状态
+- **sidePanel**: Display extension interface
+- **activeTab**: Get current tab information
+- **storage**: Local storage of user configuration
+- **tabs**: Manage tab state
 
-## 数据安全
+## Data Security
 
-### 安全措施
+### Security Measures
 
-- 所有敏感信息（如 API 密钥）使用 Chrome 安全存储 API
-- 不传输或存储用户的小红书账户信息
-- 不使用远程代码或第三方脚本
+- All sensitive information (such as API keys) uses Chrome secure storage API
+- Does not transmit or store user's Xiaohongshu account information
+- Does not use remote code or third-party scripts
 
-### 数据保留
+### Data Retention
 
-- **配置信息**：存储在本地，直到用户卸载扩展或手动删除
-- **页面内容**：不存储，仅临时处理
-- **缓存数据**：无持久缓存
+- **Configuration Information**: Stored locally until user uninstalls extension or manually deletes
+- **Page Content**: Not stored, only processed temporarily
+- **Cache Data**: No persistent cache
 
-## 第三方服务
+## Third-Party Services
 
-### AI 服务提供商
+### AI Service Providers
 
-本扩展可能向以下服务发送数据（仅在用户主动使用时）：
+This extension may send data to the following services (only when actively used by users):
 
-- **OpenAI**：GPT 模型服务
-- **Anthropic**：Claude 模型服务
+- **OpenAI**: GPT model services
+- **Anthropic**: Claude model services
 
-请查阅相应服务商的隐私政策：
+Please review the privacy policies of respective service providers:
 
-- [OpenAI 隐私政策](https://openai.com/privacy/)
-- [Anthropic 隐私政策](https://www.anthropic.com/privacy)
+- [OpenAI Privacy Policy](https://openai.com/privacy/)
+- [Anthropic Privacy Policy](https://www.anthropic.com/privacy)
 
-## 用户权利
+## User Rights
 
-### 您的控制权
+### Your Control
 
-- **功能控制**：完全控制何时使用 AI 功能
-- **数据删除**：可随时删除存储的配置信息
-- **扩展卸载**：卸载扩展将删除所有本地存储数据
+- **Feature Control**: Complete control over when to use AI features
+- **Data Deletion**: Can delete stored configuration information at any time
+- **Extension Uninstall**: Uninstalling the extension will delete all local stored data
 
-### 数据访问
+### Data Access
 
-- 所有存储的数据都在您的本地设备上
-- 可通过 Chrome 扩展管理页面查看和管理
+- All stored data is on your local device
+- Can be viewed and managed through Chrome extension management page
 
-## 儿童隐私
+## Children's Privacy
 
-本扩展不专门针对 13 岁以下儿童设计，我们不会故意收集儿童的个人信息。
+This extension is not specifically designed for children under 13, and we do not knowingly collect personal information from children.
 
-## 隐私政策变更
+## Privacy Policy Changes
 
-我们可能会更新本隐私政策。重大变更将通过扩展更新通知用户。建议定期查看本政策。
+We may update this privacy policy. Significant changes will be notified to users through extension updates. We recommend reviewing this policy regularly.
 
-## 联系我们
+## Contact Us
 
-如有隐私相关问题，请通过以下方式联系：
+For privacy-related questions, please contact us through:
 
 - GitHub Issues: [https://github.com/XiaoruiWang-SH/xhs-ai-tool/issues](https://github.com/XiaoruiWang-SH/xhs-ai-tool/issues)
-- 项目主页: [https://github.com/XiaoruiWang-SH/xhs-ai-tool](https://github.com/XiaoruiWang-SH/xhs-ai-tool)
-- 邮箱: [wallace.w.x.r@gmail.com](wallace.w.x.r@gmail.com)
+- Project Homepage: [https://github.com/XiaoruiWang-SH/xhs-ai-tool](https://github.com/XiaoruiWang-SH/xhs-ai-tool)
+- Email: [wallace.w.x.r@gmail.com](wallace.w.x.r@gmail.com)
 
-## 合规声明
+## Compliance Statement
 
-本扩展设计遵循以下原则：
+This extension is designed following these principles:
 
-- 数据最小化原则
-- 用户知情同意原则
-- 透明度原则
-- 安全保障原则
+- Data minimization principle
+- User informed consent principle
+- Transparency principle
+- Security guarantee principle
 
 ---
 
-**重要提醒**：使用本扩展即表示您已阅读并同意本隐私政策。如不同意，请勿使用本扩展。
+**Important Notice**: Using this extension indicates that you have read and agreed to this privacy policy. If you do not agree, please do not use this extension.
