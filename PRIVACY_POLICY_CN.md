@@ -2,7 +2,7 @@
 
 最后更新：2025 年 8 月 14 日
 
-📖 **中文版本** | 🌐 **[English Version](./PRIVACY_POLICY_EN.md)**
+📖 **中文版本** | 🌐 **[English Version](./PRIVACY_POLICY.md)**
 
 ## 概述
 
