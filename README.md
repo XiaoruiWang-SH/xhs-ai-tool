@@ -10,6 +10,8 @@
 
 **关键词**: 小红书, AI 文案生成, Chrome 扩展, 内容创作, 智能写作, GPT, Claude, 通义千问, 社交媒体工具
 
+**官方网站**: [https://mynotehelper.com/](https://mynotehelper.com/)
+
 📖 **中文文档** | 🌐 **[English Documentation](./README_EN.md)**
 
 ### 📺 功能演示
@@ -28,8 +30,12 @@
 
 ### 🏪 方式一：Chrome 应用商店（推荐）
 
+直接点击[小红书 AI 小帮手](https://chromewebstore.google.com/detail/%E5%B0%8F%E7%BA%A2%E4%B9%A6ai%E5%B0%8F%E5%B8%AE%E6%89%8B-%E5%B0%8F%E7%BA%A2%E4%B9%A6ai%E5%88%9B%E4%BD%9C%E5%8A%A9%E6%89%8B/jbgcgabaeechheccecbaphelkhgabkbp)
+
+或
+
 1. 打开 [Chrome Web Store](https://chrome.google.com/webstore)
-2. 搜索 **"小红书AI小帮手"**(审核中)
+2. 搜索 **"小红书 AI 小帮手"**
 3. 点击 **"添加至 Chrome"** 完成安装
 4. 安装后图标会出现在浏览器工具栏
 
